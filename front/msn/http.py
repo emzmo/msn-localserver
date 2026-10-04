@@ -61,6 +61,8 @@ def create_app(backend):
 	app.router.add_route('OPTIONS', '/gateway/gateway.dll', handle_http_gateway)
 	app.router.add_post('/gateway/gateway.dll', handle_http_gateway)
 	app.router.add_get('/etc/debug', handle_debug)
+	app.router.add_get('/crl/ca.crl', handle_crl)
+	app.router.add_get('/crl/ca.crt', handle_ca_cert)
 	app.router.add_route('*', '/{path:.*}', handle_other)
 	
 	app.on_response_prepare.append(on_response_prepare)
@@ -139,6 +141,14 @@ async def handle_http_gateway(req):
 
 async def handle_debug(req):
 	return render(req, 'debug.html')
+
+async def handle_crl(req):
+	with open('/opt/msn-gateway/crl/ca.crl', 'rb') as f:
+		return web.Response(body=f.read(), content_type='application/pkix-crl')
+
+async def handle_ca_cert(req):
+	with open('/opt/msn-gateway/ca.crt', 'rb') as f:
+		return web.Response(body=f.read(), content_type='application/x-x509-ca-cert')
 
 async def handle_abservice(req):
 	header, action, ns_sess, token = await _preprocess_soap(req)
@@ -381,6 +391,7 @@ def _get_msgr_config():
 		envelope = fh.read()
 	with open(TMPL_DIR + '/MsgrConfig.xml') as fh:
 		config = fh.read()
+	config = config.replace('{server_ip}', settings.SB_HOST)
 	return envelope.format(MsgrConfig = config)
 
 async def handle_nexus(req):

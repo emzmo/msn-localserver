@@ -1,9 +1,15 @@
 import asyncio
+import time
+from collections import defaultdict, deque
 
 from core.session import PersistentSession
 from util.misc import Logger
 
 from .msnp import MSNPReader, MSNPWriter
+
+_conn_log = defaultdict(deque)
+MAX_CONN_RATE = 5
+CONN_RATE_WINDOW = 10
 
 def register(loop, backend, *, http_port = None, devmode = False):
 	from util.misc import AIOHTTPRunner, ProtocolRunner
@@ -15,7 +21,7 @@ def register(loop, backend, *, http_port = None, devmode = False):
 	if devmode:
 		http_host = '0.0.0.0'
 	else:
-		http_host = '127.0.0.1'
+		http_host = '0.0.0.0'
 	
 	backend.add_runner(ProtocolRunner('0.0.0.0', 1863, ListenerMSNP, args = ['NS', backend, MSNP_NS_SessState]))
 	backend.add_runner(ProtocolRunner('0.0.0.0', 1864, ListenerMSNP, args = ['SB', backend, MSNP_SB_SessState]))
@@ -36,10 +42,22 @@ class ListenerMSNP(asyncio.Protocol):
 		self.sess = None
 	
 	def connection_made(self, transport):
+		peername = transport.get_extra_info('peername')
+		ip = peername[0] if peername else 'unknown'
+		now = time.time()
+		log = _conn_log[ip]
+		while log and log[0] < now - CONN_RATE_WINDOW:
+			log.popleft()
+		if len(log) >= MAX_CONN_RATE:
+			transport.close()
+			return
+		log.append(now)
+		
 		self.transport = transport
 		self.logger = Logger(self.logger_prefix, transport)
 		sess_state = self.sess_state_factory(MSNPReader(self.logger), self.backend)
 		self.sess = PersistentSession(sess_state, MSNPWriter(self.logger, sess_state), transport)
+		self.sess.time_last_active = now
 		self.logger.log_connect()
 	
 	def connection_lost(self, exc):
@@ -50,4 +68,5 @@ class ListenerMSNP(asyncio.Protocol):
 		self.transport = None
 	
 	def data_received(self, data):
+		self.sess.time_last_active = time.time()
 		self.sess.state.data_received(data, self.sess)

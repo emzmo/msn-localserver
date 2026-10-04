@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Conversations ({{ total }} messages)</h1>
+<form method="get" action="/admin/conversations">
+Filter by email: <input type="text" name="email" value="{{ filter_email }}" size="25">
+<button type="submit" class="btn">Filter</button>
+<a href="/admin/conversations">Clear</a>
+</form>
+{% if pages > 1 %}
+<p>
+{% if page > 1 %}<a href="/admin/conversations?email={{ filter_email }}&page={{ page - 1 }}">&laquo; Prev</a>{% endif %}
+Page {{ page }} of {{ pages }}
+{% if page < pages %}<a href="/admin/conversations?email={{ filter_email }}&page={{ page + 1 }}">Next &raquo;</a>{% endif %}
+</p>
+{% endif %}
+<table>
+<tr><th>Time</th><th>Sender</th><th>Recipient</th><th>Message</th></tr>
+{% for m in messages %}
+<tr>
+<td>{{ m.timestamp }}</td>
+<td>{{ m.sender }}</td>
+<td>{{ m.recipient }}</td>
+<td>{{ m.body }}</td>
+</tr>
+{% endfor %}
+</table>
+{% if messages|length == 0 %}
+<p>No conversations recorded yet.</p>
+{% endif %}
+{% endblock %}

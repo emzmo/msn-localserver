@@ -345,11 +345,16 @@ class Backend:
 		if callee_uuid is None: raise error.UserDoesNotExist()
 		ctc = caller.detail.contacts.get(callee_uuid)
 		if ctc is None:
-			if callee_uuid != caller_uuid: raise error.ContactDoesNotExist()
-			ctc_user = caller
+			if callee_uuid != caller_uuid:
+				ctc_user = self._user_by_uuid.get(callee_uuid)
+				if ctc_user is None:
+					raise error.ContactDoesNotExist()
+			else:
+				ctc_user = caller
 		else:
-			if ctc.status.is_offlineish(): raise error.ContactNotOnline()
 			ctc_user = ctc.head
+		if ctc_user is None:
+			raise error.ContactNotOnline()
 		ctc_sessions = self._sc.get_sessions_by_user(ctc_user)
 		if not ctc_sessions: raise error.ContactNotOnline()
 		
@@ -380,6 +385,8 @@ class Backend:
 	
 	async def _clean_sessions(self):
 		from .session import PollingSession
+		import settings as _settings
+		timeout = getattr(_settings, 'SESSION_TIMEOUT', 900)
 		while True:
 			await asyncio.sleep(10)
 			now = time.time()
@@ -394,6 +401,16 @@ class Backend:
 						if now >= sess.time_last_connect + sess.timeout:
 							sess.close()
 							closed.append(sess)
+						continue
+					last_active = getattr(sess, 'time_last_active', None)
+					if last_active and now > last_active + timeout:
+						from core import event as _event
+						try:
+							sess.send_event(_event.CloseEvent())
+						except Exception:
+							pass
+						sess.close()
+						closed.append(sess)
 			except Exception:
 				import traceback
 				traceback.print_exc()
@@ -465,10 +482,16 @@ class Chat:
 		self._stats.on_message_sent(sess_sender.user, sess_sender.client)
 		self._stats.on_user_active(sess_sender.user, sess_sender.client)
 		su_sender = self._users_by_sess[sess_sender]
+		_log_conversation(self.id, su_sender, data, self._users_by_sess)
+		has_recipients = False
 		for sess in self._users_by_sess.keys():
 			if sess == sess_sender: continue
 			sess.send_event(event.ChatMessage(su_sender, data))
 			self._stats.on_message_received(sess.user, sess.client)
+			has_recipients = True
+		if not has_recipients:
+			sess_sender.send_event(event.CloseEvent())
+			sess_sender.close()
 	
 	def get_roster(self, sess):
 		roster = []
@@ -498,3 +521,30 @@ def _gen_group_id(detail):
 	return s
 
 MAX_GROUP_NAME_LENGTH = 61
+
+def _log_conversation(chat_id, sender, data, users_by_sess):
+	try:
+		from db import Conversation, Session as DBSession
+		body = data
+		if isinstance(body, bytes):
+			body = body.decode('utf-8', errors = 'replace')
+		sep = '\r\n\r\n'
+		idx = body.find(sep)
+		if idx >= 0:
+			body = body[idx + len(sep):]
+		body = body.strip()
+		if not body:
+			return
+		with DBSession() as dbsess:
+			for sess, su in users_by_sess.items():
+				if su is sender:
+					continue
+				dbsess.add(Conversation(
+					chat_id = chat_id,
+					sender_email = sender.email,
+					recipient_email = su.email,
+					body = body,
+				))
+	except Exception:
+		import traceback
+		traceback.print_exc()

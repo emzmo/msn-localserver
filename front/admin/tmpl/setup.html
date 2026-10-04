@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Client Setup Guide</h1>
+
+<p>This page contains everything needed to set up a Windows XP PC to connect
+to the MSN Museum server.</p>
+
+<h2>Step 1: Install the CA Certificate</h2>
+<p>The server uses a self-signed certificate. You must install this CA
+certificate on each XP machine, or MSN Messenger will not trust the server.</p>
+<ol>
+<li>Download <a href="/admin/download/msn-museum-ca.crt"><strong>msn-museum-ca.crt</strong></a></li>
+<li>Double-click the downloaded file</li>
+<li>Click <strong>Install Certificate...</strong></li>
+<li>Select <strong>Place all certificates in the following store</strong></li>
+<li>Click <strong>Browse...</strong> and select <strong>Trusted Root Certification Authorities</strong></li>
+<li>Click <strong>Next</strong> then <strong>Finish</strong></li>
+</ol>
+
+<h2>Step 2: Edit the Hosts File</h2>
+<p>On each XP machine, open <code>C:\WINDOWS\system32\drivers\etc\hosts</code>
+in Notepad and add these lines (replace <code>{{ server_ip }}</code> with the
+server's IP if different):</p>
+
+<pre style="background:#e0e8f0; padding:1em; border-radius:3px; font-size:0.9em; overflow-x:auto;">
+{{ server_ip }}  messenger.hotmail.com
+{{ server_ip }}  messenger.msn.com
+{{ server_ip }}  nexus.passport.com
+{{ server_ip }}  login.passport.com
+{{ server_ip }}  login.live.com
+{{ server_ip }}  config.messenger.msn.com
+{{ server_ip }}  contacts.msn.com
+{{ server_ip }}  byrdr.omega.contacts.msn.com
+{{ server_ip }}  storage.msn.com
+{{ server_ip }}  tkrdr.storage.msn.com
+{{ server_ip }}  ows.messenger.msn.com
+{{ server_ip }}  rsi.hotmail.com
+{{ server_ip }}  gateway.messenger.hotmail.com
+</pre>
+
+<h2>Step 3: Clear Registry Cache (MSN 1.0&ndash;6.2 only)</h2>
+<p>Older MSN versions cache the server IP in the registry. If the client
+won't connect after setting up the hosts file, delete this registry value:</p>
+<ul>
+<li><strong>MSN 1.0&ndash;4.7:</strong> <code>HKEY_CURRENT_USER\SOFTWARE\Microsoft\MessengerService\Server</code></li>
+<li><strong>MSN 5.0&ndash;6.2:</strong> <code>HKEY_CURRENT_USER\SOFTWARE\Microsoft\MSNMessenger\Server</code></li>
+</ul>
+<p>Windows Messenger 4.7 and MSN 7.0+ do not need this step.</p>
+
+<h2>Step 4: Install MSN Messenger</h2>
+<p>Download and run an installer from the list below.
+<strong>Windows Messenger 4.7</strong> is built into Windows XP and is
+recommended for museum use &mdash; it does not require any patching.</p>
+
+<table>
+<tr><th>File</th><th>Size</th><th></th></tr>
+{% for d in downloads %}
+<tr>
+<td>{{ d.name }}</td>
+<td>{{ d.size }}</td>
+<td><a href="/admin/download/{{ d.name }}" class="btn">Download</a></td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>Step 5: Sign In</h2>
+<p>Launch MSN Messenger and sign in with the email and password provided
+by museum staff. The server address will be resolved automatically via
+the hosts file &mdash; no manual server configuration needed.</p>
+
+<div style="margin-top:2em; padding:1em; background:#fff3cd; border-radius:3px;">
+<strong>Note:</strong> If you are using <strong>MSN 7.5</strong>, you may
+see error 80048820 at sign-in. This is a known issue with WinHTTP on XP
+and our TLS gateway. <strong>Windows Messenger 4.7</strong> (included with
+XP) or <strong>MSN 7.0</strong> are recommended alternatives that work
+correctly with the museum server.
+</div>
+
+{% endblock %}

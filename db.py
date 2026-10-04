@@ -42,6 +42,16 @@ class Sound(Base):
 	language = sa.Column(sa.Integer, nullable = False)
 	is_public = sa.Column(sa.Boolean, nullable = False)
 
+class Conversation(Base):
+	__tablename__ = 't_conversation'
+	
+	id = sa.Column(sa.Integer, primary_key = True)
+	chat_id = sa.Column(sa.String, nullable = False)
+	sender_email = sa.Column(sa.String, nullable = False)
+	recipient_email = sa.Column(sa.String, nullable = False)
+	body = sa.Column(sa.Text, nullable = False)
+	timestamp = sa.Column(sa.DateTime, default = datetime.utcnow)
+
 
 engine = sa.create_engine(settings.DB)
 session_factory = sessionmaker(bind = engine)

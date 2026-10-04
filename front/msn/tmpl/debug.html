@@ -11,7 +11,7 @@
 				if (req.readyState != 4) return;
 				output.innerHTML = '::: ' + req.statusText + '\n\n' + req.getAllResponseHeaders();
 			}
-			req.open('POST', 'https://m1.escargot.log1p.xyz/NotRST.srf');
+			req.open('POST', '/NotRST.srf');
 			req.setRequestHeader('X-User', document.getElementById('email').value);
 			req.setRequestHeader('X-Password', document.getElementById('password').value);
 			req.send();

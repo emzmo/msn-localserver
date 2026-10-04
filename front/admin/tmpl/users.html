@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Users ({{ users|length }})</h1>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<table>
+<tr><th>Email</th><th>Display Name</th><th>Created</th><th>Actions</th></tr>
+{% for u in users %}
+<tr>
+<td>{{ u.email }}</td>
+<td>{{ u.name }}</td>
+<td>{{ u.date_created }}</td>
+<td>
+<form method="post" action="/admin/users/reset" style="display:inline">
+<input type="hidden" name="email" value="{{ u.email }}">
+<input type="text" name="password" placeholder="new pass" size="8">
+<button type="submit" class="btn">Reset</button>
+</form>
+<form method="post" action="/admin/users/delete" style="display:inline" onsubmit="return confirm('Delete {{ u.email }}?')">
+<input type="hidden" name="email" value="{{ u.email }}">
+<button type="submit" class="btn btn-danger">Delete</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>Create User</h2>
+<form method="post" action="/admin/users/create">
+<table>
+<tr><td>Email:</td><td><input type="text" name="email" size="30"></td></tr>
+<tr><td>Password:</td><td><input type="password" name="password" size="20"></td></tr>
+<tr><td>Display Name:</td><td><input type="text" name="name" size="30"></td></tr>
+<tr><td>Old MSN (MD5):</td><td><input type="checkbox" name="old_msn"></td></tr>
+<tr><td></td><td><button type="submit" class="btn">Create</button></td></tr>
+</table>
+</form>
+
+<h2>Bulk Create Visitors</h2>
+<form method="post" action="/admin/users/bulk">
+<table>
+<tr><td>Prefix:</td><td><input type="text" name="prefix" value="visitor" size="15"></td></tr>
+<tr><td>Domain:</td><td><input type="text" name="domain" value="hotmail.com" size="20"></td></tr>
+<tr><td>Count:</td><td><input type="number" name="count" value="20" min="1" max="100"></td></tr>
+<tr><td>Password:</td><td><input type="text" name="password" value="visitor" size="15"></td></tr>
+<tr><td>Old MSN (MD5):</td><td><input type="checkbox" name="old_msn" checked></td></tr>
+<tr><td></td><td><button type="submit" class="btn">Create Pool</button></td></tr>
+</table>
+</form>
+{% endblock %}

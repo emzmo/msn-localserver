@@ -1,7 +1,14 @@
 from .misc import Err, MSNPHandlers
+from collections import deque
+import time
 
 _handlers = MSNPHandlers()
 apply = _handlers.apply
+
+_MSG_LOG = {}
+MAX_MSG_RATE = 10
+MSG_RATE_WINDOW = 5
+MAX_MSG_SIZE = 4096
 
 # State = Auth
 
@@ -76,6 +83,21 @@ def _m_cal(sess, trid, callee_email):
 @_handlers
 def _m_msg(sess, trid, ack, data):
 	#>>> MSG trid [UNAD] len
+	if data and len(data) > MAX_MSG_SIZE:
+		sess.send_reply('NAK', trid)
+		return
+	now = time.time()
+	log = _MSG_LOG.get(sess)
+	if log is None:
+		log = deque()
+		_MSG_LOG[sess] = log
+	while log and log[0] < now - MSG_RATE_WINDOW:
+		log.popleft()
+	if len(log) >= MAX_MSG_RATE:
+		sess.send_reply('NAK', trid)
+		return
+	log.append(now)
+	
 	sess.state.chat.send_message_to_everyone(sess, data)
 	
 	# TODO: Implement ACK/NAK

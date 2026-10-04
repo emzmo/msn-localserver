@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="stat"><div class="num">{{ user_count }}</div><div class="label">Total Users</div></div>
+<div class="stat"><div class="num">{{ online_count }}</div><div class="label">Online Now</div></div>
+<div class="stat"><div class="num">{{ chat_count }}</div><div class="label">Active Chats</div></div>
+{% endblock %}

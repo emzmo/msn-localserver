@@ -5,13 +5,15 @@ def main(*, devmode = False):
 	import front.ymsg
 	import front.bot
 	import settings
+	import front.admin
 	
 	if devmode:
 		http_port = 80
 	else:
 		http_port = 8081
 	
-	loop = asyncio.get_event_loop()
+	loop = asyncio.new_event_loop()
+	asyncio.set_event_loop(loop)
 	backend = Backend(loop)
 	if settings.ENABLE_FRONT_MSN:
 		front.msn.register(loop, backend, http_port = http_port, devmode = devmode)
@@ -19,6 +21,7 @@ def main(*, devmode = False):
 		front.ymsg.register(loop, backend)
 	if settings.ENABLE_FRONT_BOT:
 		front.bot.register(loop, backend)
+	front.admin.register(loop, backend, http_port = http_port)
 	backend.run_forever()
 
 if __name__ == '__main__':

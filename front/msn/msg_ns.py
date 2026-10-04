@@ -5,6 +5,7 @@ from core import session
 from core.models import Substatus, Lst
 from core.client import Client
 
+import settings
 from .misc import build_msnp_presence_notif, MSNPHandlers, encode_msnobj, Err
 
 _handlers = MSNPHandlers()
@@ -38,7 +39,7 @@ def _m_ver(sess, trid, *args):
 def _m_cvr(sess, trid, *args):
 	v = args[5]
 	sess.client = Client('msn', v, 'gw' if isinstance(sess, session.PollingSession) else 'direct')
-	sess.send_reply('CVR', trid, v, v, v, 'https://escargot.log1p.xyz', 'https://escargot.log1p.xyz')
+	sess.send_reply('CVR', trid, v, v, v, 'https://{}'.format(settings.LOGIN_HOST), 'https://{}'.format(settings.LOGIN_HOST))
 
 @_handlers
 def _m_inf(sess, trid):
@@ -450,7 +451,7 @@ def _m_xfr(sess, trid, dest):
 		extra = ('U', 'messenger.msn.com')
 	if dialect >= 14:
 		extra += (1,)
-	sess.send_reply('XFR', trid, dest, 'm1.escargot.log1p.xyz:1864', 'CKI', token, *extra)
+	sess.send_reply('XFR', trid, dest, '{}:{}'.format(settings.SB_HOST, settings.SB_PORT), 'CKI', token, *extra)
 
 # These four commands appear to be useless:
 @_handlers

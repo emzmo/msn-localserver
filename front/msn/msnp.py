@@ -2,6 +2,7 @@ import io
 from typing import List
 from urllib.parse import unquote
 
+import settings
 from core.session import Session, SessionState
 from core import event
 
@@ -44,7 +45,7 @@ class MSNPWriter:
 				extra = ('U', 'messenger.hotmail.com')
 			if dialect >= 14:
 				extra += (1,)
-			self._write(['RNG', chatid, 'm1.escargot.log1p.xyz:1864', 'CKI', token, caller.email, caller.status.name, *extra])
+			self._write(['RNG', chatid, '{}:{}'.format(settings.SB_HOST, settings.SB_PORT), 'CKI', token, caller.email, caller.status.name, *extra])
 			return
 		if isinstance(outgoing_event, event.ChatParticipantLeft):
 			user = outgoing_event.user

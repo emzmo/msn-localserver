@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Online Now ({{ online|length }})</h1>
+{% if online %}
+<table>
+<tr><th>Email</th><th>Display Name</th><th>IP Address</th></tr>
+{% for s in online %}
+<tr><td>{{ s.email }}</td><td>{{ s.name }}</td><td>{{ s.ip }}</td></tr>
+{% endfor %}
+</table>
+{% else %}
+<p>No users currently online.</p>
+{% endif %}
+{% endblock %}

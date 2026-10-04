@@ -1,10 +1,16 @@
-__pycache__
-.cache
-*.sqlite
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Sensitive Data
 settings_local.py
-etc/Caddyfile
-dev/cert
-tmp
-hosts.lnk
-storage
-front/ymsg/todo
+*.sqlite
+*.key
+*.pem
+*.crt
+*.csr
+*.srl
+
+# Logs
+*.log

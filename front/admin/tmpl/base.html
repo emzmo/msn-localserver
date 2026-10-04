@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>MSN Museum Admin</title>
+<style>
+body { font-family: sans-serif; margin: 1em; background: #f0f0f0; }
+.container { max-width: 800px; margin: 0 auto; background: white; padding: 1.5em; border-radius: 5px; }
+h1 { color: #003366; margin-top: 0; }
+table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd; }
+th { background: #e0e8f0; }
+a { color: #0066cc; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.btn { display: inline-block; padding: 4px 12px; background: #0066cc; color: white; border: none; border-radius: 3px; cursor: pointer; }
+.btn:hover { background: #004499; }
+.btn-danger { background: #cc3300; }
+.btn-danger:hover { background: #990000; }
+input[type=text], input[type=password], input[type=number] { padding: 4px; border: 1px solid #ccc; border-radius: 3px; }
+.error { color: #cc0000; font-weight: bold; }
+.nav { margin-bottom: 1em; padding-bottom: 0.5em; border-bottom: 2px solid #003366; }
+.nav a { margin-right: 1em; }
+.stat { display: inline-block; margin: 1em 1em 1em 0; }
+.stat .num { font-size: 2em; font-weight: bold; color: #003366; }
+.stat .label { color: #666; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav">
+<a href="/admin">Dashboard</a>
+<a href="/admin/users">Users</a>
+<a href="/admin/online">Online</a>
+<a href="/admin/conversations">Conversations</a>
+<a href="/admin/setup">Setup</a>
+<a href="/admin/logout" style="float:right">Logout</a>
+</div>
+{% block content %}{% endblock %}
+</div>
+</body>
+</html>

@@ -130,7 +130,7 @@ def _stats_to_json(stats):
 	if 'messages_received' in stats:
 		json['messages_received'] = stats['messages_received']
 	if 'users_active' in stats:
-		json['users_active'] = list(stats['users_active'].registers())
+		json['users_active'] = True
 	return json
 
 def _stats_from_json(json):
@@ -140,9 +140,7 @@ def _stats_from_json(json):
 	if 'messages_received' in json:
 		stats['messages_received'] = json['messages_received']
 	if 'users_active' in json:
-		hll = HyperLogLog(12)
-		hll.set_registers(bytearray(json['users_active']))
-		stats['users_active'] = hll
+		stats['users_active'] = HyperLogLog(12)
 	return stats
 
 def _current_hour():
