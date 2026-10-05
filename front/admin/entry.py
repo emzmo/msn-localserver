@@ -19,6 +19,8 @@ _session_keys = {}
 def register(loop, backend, *, http_port):
 	from util.misc import AIOHTTPRunner
 	app = _create_admin_app(backend)
+	from front.public import entry as public_entry
+	public_entry.register(app)
 	backend.add_runner(AIOHTTPRunner('0.0.0.0', http_port + 1, app))
 
 def _create_admin_app(backend):

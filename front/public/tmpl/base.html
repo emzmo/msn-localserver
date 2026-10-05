@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>{{ t.site_title }}</title>
+<style>
+body { font-family: Verdana, Arial, sans-serif; margin: 0; background: #ffffff; color: #000000; font-size: 11px; }
+.msn-header { background: #003366; color: #ffffff; padding: 8px 15px; }
+.msn-header a { color: #ffffff; text-decoration: none; margin-right: 12px; font-size: 11px; }
+.msn-header a:hover { text-decoration: underline; }
+.msn-nav { background: #3366CC; padding: 4px 15px; }
+.msn-nav a { color: #ffffff; text-decoration: none; margin-right: 15px; font-size: 11px; font-weight: bold; }
+.msn-nav a:hover { text-decoration: underline; }
+.msn-container { width: 768px; margin: 0 auto; padding: 10px; }
+.msn-footer { background: #003366; color: #cccccc; padding: 8px 15px; text-align: center; font-size: 10px; margin-top: 20px; }
+.msn-footer a { color: #cccccc; }
+.msn-box { border: 1px solid #cccccc; padding: 15px; margin: 10px 0; background: #f8f8f8; }
+.msn-stat { display: inline-block; margin: 10px 20px 10px 0; text-align: center; }
+.msn-stat .num { font-size: 28px; font-weight: bold; color: #003366; }
+.msn-stat .label { color: #666666; font-size: 11px; }
+.msn-btn { display: inline-block; padding: 5px 15px; background: #3366CC; color: white; border: 1px solid #003366; font-size: 11px; cursor: pointer; text-decoration: none; }
+.msn-btn:hover { background: #003366; }
+.msn-input { border: 1px solid #999999; padding: 3px; font-size: 11px; }
+.msn-table th { background: #DCDCDC; padding: 4px 8px; text-align: left; font-size: 11px; }
+.msn-table td { padding: 4px 8px; border-bottom: 1px solid #eeeeee; }
+.lang-switch { float: right; }
+.lang-switch a { color: #99ccff; text-decoration: none; font-size: 10px; }
+.lang-switch a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="msn-header">
+<a href="/">{{ t.site_title }}</a>
+<div class="lang-switch">
+{% if lang == 'ga' %}<a href="/?lang=en">{{ t.lang_switch }}{% else %}<a href="/?lang=ga">{{ t.lang_switch }}{% endif %}</a>
+</div>
+</div>
+<div class="msn-nav">
+<a href="/">{{ t.welcome }}</a>
+<a href="/signup">{{ t.signup_link }}</a>
+<a href="/info">{{ t.info_link }}</a>
+<a href="/info/protocol">{{ t.protocol_link }}</a>
+<a href="/admin">{{ t.admin_link }}</a>
+</div>
+<div class="msn-container">
+{% block content %}{% endblock %}
+</div>
+<div class="msn-footer">
+&copy; 2003-2013 Microsoft Corporation. Museum recreation.&nbsp;&nbsp;<a href="/admin">{{ t.admin_link }}</a>
+</div>
+</body>
+</html>

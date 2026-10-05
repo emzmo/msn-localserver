@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t.welcome }}</h1>
+<p>{{ t.subtitle }}</p>
+<p>{{ years_since }} {{ t.years_since }}</p>
+<p>{{ msg_count }} {{ t.messages_sent }} | {{ user_count }} {{ t.users_registered }}</p>
+{% endblock %}
