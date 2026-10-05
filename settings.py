@@ -1,6 +1,6 @@
 DB = 'sqlite:///msn.sqlite'
 STATS_DB = 'sqlite:///stats.sqlite'
-LOGIN_HOST = 'm1.escargot.log1p.xyz'
+LOGIN_HOST = 'login.passport.com'
 STORAGE_HOST = LOGIN_HOST
 SB_HOST = LOGIN_HOST
 SB_PORT = 1864

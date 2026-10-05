@@ -4,7 +4,7 @@ from core.models import Substatus, Lst
 from core import event
 
 CLIENT = Client('testbot', '0.1')
-BOT_EMAIL = 'test@bot.log1p.xyz'
+BOT_EMAIL = 'bot@msn.local'
 
 def register(loop, backend):
 	state = Bot_NS_SessState(backend)

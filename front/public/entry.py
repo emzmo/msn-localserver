@@ -121,6 +121,12 @@ def _get_lang(req):
 		lang = 'ga'
 	return lang
 
+def _check_lang_switch(req):
+	lang_param = req.query.get('lang')
+	if lang_param in ('ga', 'en'):
+		return lang_param
+	return None
+
 def _render_public(req, tmpl_name, ctxt = None, status = 200):
 	lang = _get_lang(req)
 	t = TRANSLATIONS[lang]
@@ -136,6 +142,11 @@ def _set_lang_cookie(resp, lang):
 	resp.set_cookie('LANG', lang, max_age = 365 * 86400, httponly = False)
 
 async def handle_index(req):
+	switch = _check_lang_switch(req)
+	if switch:
+		resp = web.Response(status = 302, headers = {'Location': '/'})
+		_set_lang_cookie(resp, switch)
+		return resp
 	lang = _get_lang(req)
 	t = TRANSLATIONS[lang]
 	from datetime import date
@@ -153,12 +164,27 @@ async def handle_index(req):
 	})
 
 async def handle_info(req):
-	return _render_public(req, 'info.html')
+	switch = _check_lang_switch(req)
+	if switch:
+		resp = web.Response(status = 302, headers = {'Location': '/info'})
+		_set_lang_cookie(resp, switch)
+		return resp
+	return _render_public(req, 'info.html', {'server_ip': settings.SB_HOST})
 
 async def handle_protocol(req):
+	switch = _check_lang_switch(req)
+	if switch:
+		resp = web.Response(status = 302, headers = {'Location': '/info/protocol'})
+		_set_lang_cookie(resp, switch)
+		return resp
 	return _render_public(req, 'protocol.html')
 
 async def handle_signup_form(req):
+	switch = _check_lang_switch(req)
+	if switch:
+		resp = web.Response(status = 302, headers = {'Location': '/signup'})
+		_set_lang_cookie(resp, switch)
+		return resp
 	lang = _get_lang(req)
 	error = req.query.get('error', '')
 	error_msg = TRANSLATIONS[lang].get('signup_error_' + error, '') if error else ''
@@ -190,13 +216,11 @@ async def handle_signup_submit(req):
 		import random
 		name = random.choice(SAFE_NAMES)
 
+	from util.misc import gen_uuid
 	with DBSession() as sess:
 		existing = sess.query(User).filter(User.email == email).one_or_none()
 		if existing:
 			return web.Response(status = 302, headers = {'Location': '/signup?error=exists'})
-
-	from util.misc import gen_uuid
-	with DBSession() as sess:
 		user = User(
 			uuid = gen_uuid(), email = email, verified = True,
 			name = name, message = '',

@@ -257,7 +257,7 @@ async def handle_conversations(req):
 		if filter_email:
 			subq = subq.filter(
 				(Conversation.sender_email == filter_email) |
-				Conversation.recipient_email == filter_email)
+				(Conversation.recipient_email == filter_email))
 		subq = subq.subquery()
 		total = sess.query(subq).count()
 		threads = sess.query(subq).order_by(subq.c.last_ts.desc()).offset((page - 1) * per_page).limit(per_page).all()
