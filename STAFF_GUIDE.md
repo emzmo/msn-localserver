@@ -54,6 +54,37 @@ The admin website lets you manage accounts and monitor the server.
 2. You can download the CA certificate and MSN Messenger installers from this page.
 3. Follow the instructions to edit the hosts file and install the certificate on the XP computer.
 
+### Editing a User's Display Name
+1. Click **Users** in the top menu.
+2. Click **Edit** next to the user's email.
+3. Change the display name and click **Save**.
+
+### Wiping and Recreating the Visitor Pool
+1. Click **Users** in the top menu.
+2. Scroll to **Wipe Visitor Pool** and click the **Wipe & Recreate** button.
+3. A confirmation dialog will appear. Enter the admin password to confirm.
+4. All visitor accounts matching the pattern will be deleted.
+5. If "Recreate after wipe" is checked, a fresh pool will be created automatically.
+
+### Viewing Conversation History
+1. Click **Conversations** in the top menu.
+2. Conversations are grouped by chat session, showing participants and all messages.
+3. Use the email filter to find conversations involving a specific user.
+4. Click **Delete Thread** to remove a conversation from the history.
+
+### Checking Server Status
+1. Click **Status** in the top menu.
+2. The page auto-refreshes every 10 seconds.
+3. Check that both services show **active** (green).
+4. Check that all ports show **Yes** (green) under Listening.
+5. Recent log entries are shown at the bottom.
+
+### Public Website
+- The main page at **http://SERVER_IP:8082/** is a public MSN 2003-style homepage.
+- Visitors can create their own account at **http://SERVER_IP:8082/signup**.
+- The protocol info page at **http://SERVER_IP:8082/info** shows an animated diagram.
+- The website defaults to Irish. Click "English" in the top right to switch languages.
+
 ## Troubleshooting
 
 ### A visitor can't sign in

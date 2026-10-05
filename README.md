@@ -5,9 +5,10 @@ A fork of [v1ckxy/MSN](https://github.com/v1ckxy/MSN) optimized for offline muse
 ## Features
 
 - **Fully offline** — no internet or DNS required. All hostnames resolve to the Pi via XP hosts files.
-- **Web Admin UI** — user management (create, delete, reset, bulk-create), online status, conversation history, client setup guide with downloadable installers and CA certificate.
-- **SQLite conversation persistence** — all switchboard messages logged with sender, recipient, timestamp, and body.
-- **Rate limiting & session timeouts** — connection flood protection (5/10s per IP), message flood protection (10/5s per session), 4096-byte message cap, 15-minute idle timeout. Designed for unattended kiosk use.
+- **Web Admin UI** — user management (create, edit, delete, reset, bulk-create, wipe & recreate), online status, conversation history with thread grouping and delete, server status dashboard, client setup guide with downloadable installers and CA certificate.
+- **Public website** — bilingual (Irish/English) MSN 2003-style landing page, public self-signup with safe display name dictionary, animated MSNP protocol diagram (simulated login + Aoife & Séamus conversation), protocol info page.
+- **SQLite conversation persistence** — all switchboard messages logged with sender, recipient, timestamp, and body. Thread view with per-conversation delete.
+- **Rate limiting & session timeouts** — connection flood protection (5/10s per IP), message flood protection (10/5s per session), 4096-byte message cap, 15-minute idle timeout, signup rate limit (1/15s per IP). Designed for unattended kiosk use.
 - **SSLv3/TLS 1.0 gateway** — a C-based reverse proxy using OpenSSL 1.0.2, enabling Passport/TWN authentication for MSNP 8+ clients on Windows XP.
 - **Auto-restart** — both services (Python server + C gateway) use systemd `Restart=always`.
 
@@ -32,7 +33,7 @@ XP Clients (stock, unpatched)                 Raspberry Pi 2
 | Notification Server (NS) | 1863 | Python asyncio | MSNP protocol — presence, contact list, auth |
 | Switchboard (SB) | 1864 | Python asyncio | Chat sessions (1:1 and group) |
 | HTTP API | 8081 | Python aiohttp | Passport login, SOAP endpoints, MsgrConfig |
-| Admin UI | 8082 | Python aiohttp | Staff web interface |
+| Admin & Public UI | 8082 | Python aiohttp | Staff admin interface + bilingual public pages (landing, signup, info) |
 | SSLv3 Gateway | 443 | C + OpenSSL 1.0.2u | TLS termination → proxy to 8081 |
 
 ## Client Compatibility
