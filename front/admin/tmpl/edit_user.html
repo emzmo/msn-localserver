@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Edit User</h1>
+<form method="post" action="/admin/users/edit">
+<table>
+<tr><td>Email:</td><td>{{ user.email }}<input type="hidden" name="email" value="{{ user.email }}"></td></tr>
+<tr><td>Display Name:</td><td><input type="text" name="name" value="{{ user.name }}" size="30"></td></tr>
+<tr><td></td><td><button type="submit" class="btn">Save</button> <a href="/admin/users" class="btn">Cancel</a></td></tr>
+</table>
+</form>
+{% endblock %}

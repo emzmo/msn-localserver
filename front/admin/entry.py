@@ -39,6 +39,9 @@ def _create_admin_app(backend):
 	app.router.add_post('/admin/users/delete', handle_user_delete)
 	app.router.add_post('/admin/users/reset', handle_user_reset)
 	app.router.add_post('/admin/users/bulk', handle_user_bulk)
+	app.router.add_get('/admin/users/edit/{email:.+}', handle_user_edit_form)
+	app.router.add_post('/admin/users/edit', handle_user_edit_save)
+	app.router.add_post('/admin/users/wipe', handle_user_wipe)
 	app.router.add_get('/admin/online', handle_online)
 	app.router.add_get('/admin/conversations', handle_conversations)
 	app.router.add_get('/admin/setup', handle_setup)
@@ -148,7 +151,10 @@ async def handle_user_reset(req):
 	password = form.get('password', '')
 	if not email or not password:
 		return _redirect('/admin/users')
-	_create_or_update_user(email, password, None, False)
+	with DBSession() as sess:
+		user = sess.query(User).filter(User.email == email).one_or_none()
+		has_md5 = bool(user.password_md5) if user else False
+	_create_or_update_user(email, password, None, has_md5)
 	return _redirect('/admin/users')
 
 async def handle_user_bulk(req):
@@ -163,6 +169,54 @@ async def handle_user_bulk(req):
 	for i in range(1, count + 1):
 		email = '{}{}@{}'.format(prefix, i, domain)
 		_create_or_update_user(email, password, '{} {}'.format(prefix.capitalize(), i), old_msn)
+	return _redirect('/admin/users')
+
+async def handle_user_edit_form(req):
+	if not _check_auth(req):
+		return _redirect('/admin/login')
+	email = req.match_info['email']
+	with DBSession() as sess:
+		user = sess.query(User).filter(User.email == email).one_or_none()
+		if not user:
+			return _redirect('/admin/users')
+		user_data = {'email': user.email, 'name': user.name}
+	return _render(req, 'edit_user.html', {'user': user_data})
+
+async def handle_user_edit_save(req):
+	if not _check_auth(req):
+		return _redirect('/admin/login')
+	form = await req.post()
+	email = form.get('email', '')
+	name = form.get('name', '').strip()
+	if not email or not name:
+		return _redirect('/admin/users')
+	with DBSession() as sess:
+		user = sess.query(User).filter(User.email == email).one_or_none()
+		if user:
+			user.name = name
+			sess.add(user)
+	return _redirect('/admin/users')
+
+async def handle_user_wipe(req):
+	if not _check_auth(req):
+		return _redirect('/admin/login')
+	form = await req.post()
+	confirm_password = form.get('confirm_password', '')
+	if not hmac.compare_digest(confirm_password, settings.ADMIN_PASSWORD):
+		return _render(req, 'users.html', {'error': 'Wrong admin password for wipe confirmation'}, status = 403)
+	prefix = form.get('prefix', 'visitor').strip()
+	domain = form.get('domain', 'hotmail.com').strip()
+	recreate = form.get('recreate') == 'on'
+	count = int(form.get('count', '20'))
+	password = form.get('password', 'visitor')
+	old_msn = form.get('old_msn') == 'on'
+	pattern = '{}%@{}'.format(prefix, domain)
+	with DBSession() as sess:
+		sess.query(User).filter(User.email.like(pattern)).delete()
+	if recreate:
+		for i in range(1, count + 1):
+			email = '{}{}@{}'.format(prefix, i, domain)
+			_create_or_update_user(email, password, '{} {}'.format(prefix.capitalize(), i), old_msn)
 	return _redirect('/admin/users')
 
 async def handle_online(req):
