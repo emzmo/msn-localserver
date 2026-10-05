@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t.info_title }}</h1>
+
+<div style="margin:10px 0;">
+<button onclick="showTab('login')" id="tab-login" class="msn-btn" style="margin-right:5px;">{{ t.login_tab }}</button>
+<button onclick="showTab('conversation')" id="tab-conv" class="msn-btn" style="background:#999;">{{ t.conversation_tab }}</button>
+</div>
+
+<div id="tab-login-content" style="display:block;">
+<h3>{{ t.login_tab }}: {{ t.sender }} &harr; {{ t.receiver }}</h3>
+<div style="background:#1a1a2e; color:#0f0; padding:15px; border-radius:5px; font-family:monospace; font-size:12px; min-height:350px;">
+<table style="width:100%; font-family:monospace;" id="login-table">
+<tr style="color:#99ccff; font-weight:bold;">
+<td style="width:45%;">{{ t.sender }} (Client)</td>
+<td style="width:10%; text-align:center;"></td>
+<td style="width:45%;">{{ t.receiver }} (Server)</td>
+</tr>
+<tbody id="login-rows"></tbody>
+</table>
+</div>
+</div>
+
+<div id="tab-conv-content" style="display:none;">
+<h3>{{ t.conversation_tab }}: Aoife &harr; S&eacute;amus</h3>
+<div style="background:#1a1a2e; color:#0f0; padding:15px; border-radius:5px; font-family:monospace; font-size:12px; min-height:350px;">
+<table style="width:100%; font-family:monospace;" id="conv-table">
+<tr style="color:#99ccff; font-weight:bold;">
+<td style="width:45%;">{{ t.sender }} (Aoife)</td>
+<td style="width:10%; text-align:center;"></td>
+<td style="width:45%;">{{ t.receiver }} (S&eacute;amus)</td>
+</tr>
+<tbody id="conv-rows"></tbody>
+</table>
+</div>
+</div>
+
+<script>
+function showTab(tab) {
+	document.getElementById('tab-login-content').style.display = tab == 'login' ? 'block' : 'none';
+	document.getElementById('tab-conv-content').style.display = tab == 'conversation' ? 'block' : 'none';
+	document.getElementById('tab-login').style.background = tab == 'login' ? '#3366CC' : '#999';
+	document.getElementById('tab-conv').style.background = tab == 'conversation' ? '#3366CC' : '#999';
+	if (tab == 'conversation') startConv(); else startLogin();
+}
+
+var loginSteps = [
+	{dir:'r', text:'VER 1 MSNP8 CVR0'},
+	{dir:'l', text:'VER 1 MSNP8'},
+	{dir:'r', text:'CVR 2 0x0409 winnt 5.1 i386 MSNMSGR 5.0.0575'},
+	{dir:'l', text:'CVR 2 5.0.0575 5.0.0575 5.0.0575 https://login.passport.com'},
+	{dir:'r', text:'USR 3 TWN I aoife@hotmail.com'},
+	{dir:'l', text:'USR 3 TWN S ct=1,rver=1,wp=FS_40SEC_0_COMPACT,lc=1,id=1'},
+	{dir:'c', text:'[HTTPS: nexus.passport.com -> /rdr/pprdr.asp]'},
+	{dir:'c', text:'[HTTPS: login.passport.com -> /login -> token received]'},
+	{dir:'r', text:'USR 4 TWN S f6b626a21fbac80df5ba'},
+	{dir:'l', text:'USR 4 OK aoife@hotmail.com Aoife 1 0'},
+	{dir:'r', text:'SYN 5 0'},
+	{dir:'l', text:'SYN 5 1 0 1'},
+	{dir:'l', text:'GTC A'},
+	{dir:'l', text:'BLP AL'},
+	{dir:'l', text:'LSG 0 Other Contacts 0'},
+	{dir:'r', text:'CHG 6 NLN 0'},
+	{dir:'l', text:'CHG 6 NLN 0'},
+];
+
+var convSteps = [
+	{dir:'r', text:'XFR 1 SB'},
+	{dir:'l', text:'XFR 1 SB 172.16.0.20:1864 CKI bc4cd125e70cf7f688d6'},
+	{dir:'c', text:'[Aoife connects to Switchboard port 1864]'},
+	{dir:'r', text:'USR 2 aoife@hotmail.com bc4cd125e70cf7f688d6'},
+	{dir:'l', text:'USR 2 OK aoife@hotmail.com Aoife'},
+	{dir:'r', text:'CAL 3 seamus@hotmail.com'},
+	{dir:'l', text:'CAL 3 RINGING a96cff6b-cf79-41ed-855f-ddf9ce34e631'},
+	{dir:'c', text:'[RNG sent to Seamus via NS -> Seamus connects to SB]'},
+	{dir:'l', text:'JOI seamus@hotmail.com Seamus'},
+	{dir:'l', text:'IRO 3 1 1 seamus@hotmail.com Seamus'},
+	{dir:'r', text:'MSG 4 U 84'},
+	{dir:'l', text:'MSG aoife@hotmail.com Aoife 84'},
+	{dir:'c', text:'Dia duit, a Shéamuis!'},
+	{dir:'l', text:'MSG seamus@hotmail.com Seamus 71'},
+	{dir:'c', text:'Dia duit, a Aoife!'},
+	{dir:'r', text:'MSG 5 U 92'},
+	{dir:'l', text:'MSG aoife@hotmail.com Aoife 92'},
+	{dir:'c', text:'Conas atá tú inniu?'},
+	{dir:'l', text:'MSG seamus@hotmail.com Seamus 89'},
+	{dir:'c', text:'Tá mé go maith, go raibh maith agat!'},
+	{dir:'r', text:'MSG 6 U 78'},
+	{dir:'l', text:'MSG aoife@hotmail.com Aoife 78'},
+	{dir:'c', text:'An bhfuil tú ag dul go dtí an museum?'},
+	{dir:'l', text:'MSG seamus@hotmail.com Seamus 95'},
+	{dir:'c', text:'Tá, tá sé go hiontach! Feicfidh mé ann thú.'},
+];
+
+var loginTimer = null, convTimer = null;
+
+function addRow(tbody, step) {
+	var tr = document.createElement('tr');
+	var tdL = document.createElement('td');
+	var tdM = document.createElement('td');
+	var tdR = document.createElement('td');
+	tdM.style.textAlign = 'center';
+	if (step.dir == 'r') {
+		tdL.textContent = step.text;
+		tdL.style.color = '#00ff00';
+		tdM.textContent = '->';
+		tdM.style.color = '#ffff00';
+	} else if (step.dir == 'l') {
+		tdR.textContent = step.text;
+		tdR.style.color = '#00ffff';
+		tdM.textContent = '<-';
+		tdM.style.color = '#ffff00';
+	} else {
+		tdM.textContent = step.text;
+		tdM.style.color = '#ff9966';
+		tdM.colSpan = 3;
+		tdL.style.display = 'none';
+		tdR.style.display = 'none';
+	}
+	tr.appendChild(tdL);
+	tr.appendChild(tdM);
+	tr.appendChild(tdR);
+	tr.style.opacity = '0';
+	tr.style.transition = 'opacity 0.3s';
+	tbody.appendChild(tr);
+	setTimeout(function() { tr.style.opacity = '1'; }, 50);
+}
+
+function animate(tableId, steps, timerName) {
+	var tbody = document.getElementById(tableId);
+	tbody.innerHTML = '';
+	var i = 0;
+	function next() {
+		if (i < steps.length) {
+			addRow(tbody, steps[i]);
+			i++;
+			timer = setTimeout(next, 900);
+		} else {
+			timer = setTimeout(function() {
+				animate(tableId, steps, timerName);
+			}, 3000);
+		}
+	}
+	if (timerName == 'loginTimer') { if (loginTimer) clearTimeout(loginTimer); loginTimer = null; }
+	else { if (convTimer) clearTimeout(convTimer); convTimer = null; }
+	next();
+}
+
+function startLogin() {
+	if (convTimer) { clearTimeout(convTimer); convTimer = null; }
+	animate('login-rows', loginSteps, 'loginTimer');
+}
+
+function startConv() {
+	if (loginTimer) { clearTimeout(loginTimer); loginTimer = null; }
+	animate('conv-rows', convSteps, 'convTimer');
+}
+
+startLogin();
+</script>
+{% endblock %}
