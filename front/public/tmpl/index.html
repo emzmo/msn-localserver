@@ -1,7 +1,50 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>{{ t.welcome }}</h1>
-<p>{{ t.subtitle }}</p>
-<p>{{ years_since }} {{ t.years_since }}</p>
-<p>{{ msg_count }} {{ t.messages_sent }} | {{ user_count }} {{ t.users_registered }}</p>
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+<tr valign="top">
+<td width="150" style="background:#DCDCDC; padding:8px;">
+<div style="font-weight:bold; background:#003366; color:white; padding:4px; margin-bottom:8px;">MSN</div>
+<a href="/signup" style="display:block; color:#003366; text-decoration:none; margin-bottom:6px;">» {{ t.signup_link }}</a>
+<a href="/info" style="display:block; color:#003366; text-decoration:none; margin-bottom:6px;">» {{ t.info_link }}</a>
+<a href="/info/protocol" style="display:block; color:#003366; text-decoration:none; margin-bottom:6px;">» {{ t.protocol_link }}</a>
+<a href="/admin" style="display:block; color:#003366; text-decoration:none; margin-bottom:6px;">» {{ t.admin_link }}</a>
+<hr style="border:1px solid #999; margin:10px 0;">
+<div style="font-weight:bold; margin-bottom:4px;">{{ t.info_link }}</div>
+<div style="margin-bottom:15px;">
+<strong style="font-size:18px; color:#003366;">{{ years_since }}</strong><br>
+{{ t.years_since }}
+</div>
+<div style="margin-bottom:15px;">
+<strong style="font-size:18px; color:#003366;">{{ msg_count }}</strong><br>
+{{ t.messages_sent }}
+</div>
+<div style="margin-bottom:15px;">
+<strong style="font-size:18px; color:#003366;">{{ user_count }}</strong><br>
+{{ t.users_registered }}
+</div>
+</td>
+<td style="padding:8px 15px;">
+<div style="background:#003366; color:white; padding:6px 10px; font-weight:bold; font-size:14px; margin-bottom:10px;">
+{{ t.welcome }}
+</div>
+<p style="font-size:12px; line-height:1.6;">{{ t.subtitle }}</p>
+
+<div style="background:#f0f7ff; border:1px solid #3366CC; padding:12px; margin:15px 0;">
+<h3 style="margin:0 0 8px 0; color:#003366;">{{ t.signup_link }}</h3>
+<p style="margin:0 0 8px 0;">{{ t.signup_desc }}</p>
+<a href="/signup" class="msn-btn">{{ t.create_account }} &raquo;</a>
+</div>
+
+<div style="background:#f8f8f8; border:1px solid #ccc; padding:12px; margin:15px 0;">
+<h3 style="margin:0 0 8px 0; color:#003366;">{{ t.info_link }}</h3>
+<p style="margin:0;"><a href="/info" style="color:#003366;">{{ t.info_title }} &raquo;</a></p>
+</div>
+
+<div style="background:#f8f8f8; border:1px solid #ccc; padding:12px; margin:15px 0;">
+<h3 style="margin:0 0 8px 0; color:#003366;">{{ t.protocol_link }}</h3>
+<p style="margin:0;"><a href="/info/protocol" style="color:#003366;">{{ t.protocol_title }} &raquo;</a></p>
+</div>
+</td>
+</tr>
+</table>
 {% endblock %}

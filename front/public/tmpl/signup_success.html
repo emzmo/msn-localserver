@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="background:#e8ffe8; border:1px solid #33cc33; padding:20px; margin:20px auto; text-align:center; max-width:400px;">
+<h1 style="color:#339933; margin:0 0 10px 0;">&#10004;</h1>
+<h2 style="color:#003366; margin:0 0 10px 0;">{{ t.signup_success }}</h2>
+<p style="font-size:12px;">{{ t.signup_success_desc }}</p>
+</div>
+<p style="text-align:center;"><a href="/" style="color:#003366;">&laquo; {{ t.back_home }}</a></p>
+{% endblock %}
