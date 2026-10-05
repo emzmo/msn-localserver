@@ -44,6 +44,8 @@ def _create_admin_app(backend):
 	app.router.add_post('/admin/users/wipe', handle_user_wipe)
 	app.router.add_get('/admin/online', handle_online)
 	app.router.add_get('/admin/conversations', handle_conversations)
+	app.router.add_post('/admin/conversations/delete', handle_conversation_delete)
+	app.router.add_get('/admin/status', handle_status)
 	app.router.add_get('/admin/setup', handle_setup)
 	app.router.add_get('/admin/download/{filename}', handle_download)
 	
@@ -239,34 +241,105 @@ async def handle_conversations(req):
 	if not _check_auth(req):
 		return _redirect('/admin/login')
 	from db import Conversation
+	from sqlalchemy import func
 	filter_email = req.query.get('email', '')
 	page = int(req.query.get('page', '1'))
-	per_page = 50
+	per_page = 20
 	with DBSession() as sess:
-		q = sess.query(Conversation).order_by(Conversation.timestamp.desc())
+		subq = sess.query(
+			Conversation.chat_id,
+			func.min(Conversation.timestamp).label('first_ts'),
+			func.max(Conversation.timestamp).label('last_ts'),
+			func.count(Conversation.id).label('msg_count'),
+		).group_by(Conversation.chat_id)
 		if filter_email:
-			q = q.filter(
+			subq = subq.filter(
 				(Conversation.sender_email == filter_email) |
-				(Conversation.recipient_email == filter_email)
-			)
-		total = q.count()
-		msgs = q.offset((page - 1) * per_page).limit(per_page).all()
-		msg_list = [{
-			'id': m.id,
-			'chat_id': m.chat_id,
-			'sender': m.sender_email,
-			'recipient': m.recipient_email,
-			'body': m.body[:200] if m.body else '',
-			'timestamp': m.timestamp,
-		} for m in msgs]
+				Conversation.recipient_email == filter_email)
+		subq = subq.subquery()
+		total = sess.query(subq).count()
+		threads = sess.query(subq).order_by(subq.c.last_ts.desc()).offset((page - 1) * per_page).limit(per_page).all()
+		thread_list = []
+		for t in threads:
+			msgs = sess.query(Conversation).filter(Conversation.chat_id == t.chat_id).order_by(Conversation.timestamp.asc()).all()
+			participants = set()
+			for m in msgs:
+				participants.add(m.sender_email)
+				participants.add(m.recipient_email)
+			thread_list.append({
+				'chat_id': t.chat_id,
+				'participants': ' <-> '.join(sorted(participants)),
+				'msg_count': t.msg_count,
+				'first_ts': t.first_ts,
+				'last_ts': t.last_ts,
+				'messages': [{
+					'sender': m.sender_email,
+					'body': m.body[:500] if m.body else '',
+					'timestamp': m.timestamp,
+				} for m in msgs],
+			})
 	pages = (total + per_page - 1) // per_page
 	return _render(req, 'conversations.html', {
-		'messages': msg_list,
+		'threads': thread_list,
 		'filter_email': filter_email,
 		'page': page,
 		'pages': pages,
 		'total': total,
 	})
+
+async def handle_conversation_delete(req):
+	if not _check_auth(req):
+		return _redirect('/admin/login')
+	form = await req.post()
+	chat_id = form.get('chat_id', '')
+	if not chat_id:
+		return _redirect('/admin/conversations')
+	from db import Conversation
+	with DBSession() as sess:
+		sess.query(Conversation).filter(Conversation.chat_id == chat_id).delete()
+	return _redirect('/admin/conversations')
+
+async def handle_status(req):
+	if not _check_auth(req):
+		return _redirect('/admin/login')
+	import subprocess
+	status = {}
+	for svc in ['msn-museum.service', 'msn-gateway-ssl3.service']:
+		try:
+			r = subprocess.run(['systemctl', 'is-active', svc], capture_output=True, text=True, timeout=5)
+			status[svc] = r.stdout.strip()
+		except Exception:
+			status[svc] = 'unknown'
+	try:
+		with open('/proc/uptime') as f:
+			uptime_secs = float(f.read().split()[0])
+		hours = int(uptime_secs // 3600)
+		mins = int((uptime_secs % 3600) // 60)
+		status['uptime'] = '%dh %dm' % (hours, mins)
+	except Exception:
+		status['uptime'] = 'unknown'
+	try:
+		with open('/proc/meminfo') as f:
+			for line in f:
+				if line.startswith('MemAvailable:'):
+					status['mem_available'] = int(line.split()[1]) // 1024
+					break
+	except Exception:
+		status['mem_available'] = 0
+	try:
+		r = subprocess.run(['ss', '-tlnp'], capture_output=True, text=True, timeout=5)
+		lines = r.stdout.strip().split('\n')
+		status['ports'] = {}
+		for port in ['443', '1863', '1864', '8081', '8082']:
+			status['ports'][port] = any((':' + port) in line for line in lines)
+	except Exception:
+		status['ports'] = {}
+	try:
+		r = subprocess.run(['journalctl', '-u', 'msn-museum.service', '-n', '20', '--no-pager'], capture_output=True, text=True, timeout=5)
+		status['logs'] = r.stdout.strip().split('\n')
+	except Exception:
+		status['logs'] = ['Unable to read logs']
+	return _render(req, 'status.html', {'status': status})
 
 def _create_or_update_user(email, password, name, old_msn):
 	from util.misc import gen_uuid

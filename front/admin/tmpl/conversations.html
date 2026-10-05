@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Conversations ({{ total }} messages)</h1>
+<h1>Conversations ({{ total }} threads)</h1>
 <form method="get" action="/admin/conversations">
 Filter by email: <input type="text" name="email" value="{{ filter_email }}" size="25">
 <button type="submit" class="btn">Filter</button>
@@ -13,18 +13,30 @@ Page {{ page }} of {{ pages }}
 {% if page < pages %}<a href="/admin/conversations?email={{ filter_email }}&page={{ page + 1 }}">Next &raquo;</a>{% endif %}
 </p>
 {% endif %}
-<table>
-<tr><th>Time</th><th>Sender</th><th>Recipient</th><th>Message</th></tr>
-{% for m in messages %}
-<tr>
-<td>{{ m.timestamp }}</td>
-<td>{{ m.sender }}</td>
-<td>{{ m.recipient }}</td>
-<td>{{ m.body }}</td>
-</tr>
+
+{% for t in threads %}
+<div style="border:1px solid #ccc; border-radius:5px; margin:1em 0; padding:1em;">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<strong>{{ t.participants }}</strong>
+<span style="color:#666; font-size:0.85em;">{{ t.msg_count }} msgs | {{ t.last_ts }}</span>
+</div>
+<div style="margin-top:0.5em; max-height:300px; overflow-y:auto;">
+{% for m in t.messages %}
+<div style="margin:0.3em 0; padding:0.3em 0.5em; {% if loop.index % 2 == 0 %}background:#f5f5f5;{% endif %}border-radius:3px;">
+<span style="font-weight:bold; color:#0066cc;">{{ m.sender }}</span>
+<span style="color:#999; font-size:0.8em;"> ({{ m.timestamp }})</span>:
+{{ m.body }}
+</div>
 {% endfor %}
-</table>
-{% if messages|length == 0 %}
+</div>
+<form method="post" action="/admin/conversations/delete" style="margin-top:0.5em;" onsubmit="return confirm('Delete this conversation thread?')">
+<input type="hidden" name="chat_id" value="{{ t.chat_id }}">
+<button type="submit" class="btn btn-danger" style="font-size:0.8em;">Delete Thread</button>
+</form>
+</div>
+{% endfor %}
+
+{% if threads|length == 0 %}
 <p>No conversations recorded yet.</p>
 {% endif %}
 {% endblock %}

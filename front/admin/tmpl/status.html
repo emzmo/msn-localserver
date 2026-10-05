@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Server Status</h1>
+<meta http-equiv="refresh" content="10">
+
+<h2>Services</h2>
+<table>
+<tr><th>Service</th><th>Status</th></tr>
+{% for svc, state in status.items() if svc not in ('uptime', 'mem_available', 'ports', 'logs') %}
+<tr>
+<td>{{ svc }}</td>
+<td style="font-weight:bold; color:{% if state == 'active' %}green{% else %}red{% endif %};">{{ state }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>System</h2>
+<table>
+<tr><th>Uptime</th><td>{{ status.uptime }}</td></tr>
+<tr><th>Memory Available</th><td>{{ status.mem_available }} MB</td></tr>
+</table>
+
+<h2>Ports</h2>
+<table>
+<tr><th>Port</th><th>Listening</th></tr>
+{% for port, listening in status.ports.items() %}
+<tr>
+<td>{{ port }}</td>
+<td style="font-weight:bold; color:{% if listening %}green{% else %}red{% endif %};">{% if listening %}Yes{% else %}No{% endif %}</td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>Recent Logs</h2>
+<pre style="background:#1a1a2e; color:#0f0; padding:1em; border-radius:3px; font-size:0.8em; max-height:400px; overflow-y:auto;">
+{% for line in status.logs %}{{ line }}
+{% endfor %}</pre>
+{% endblock %}
