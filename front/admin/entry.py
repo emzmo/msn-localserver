@@ -35,7 +35,7 @@ def _create_admin_app(backend):
 	app.router.add_get('/admin/', handle_dashboard)
 	app.router.add_get('/admin/login', handle_login_form)
 	app.router.add_post('/admin/login', handle_login_post)
-	app.router.add_post('/admin/logout', handle_logout)
+	app.router.add_get('/admin/logout', handle_logout)
 	app.router.add_get('/admin/users', handle_users)
 	app.router.add_post('/admin/users/create', handle_user_create)
 	app.router.add_post('/admin/users/delete', handle_user_delete)

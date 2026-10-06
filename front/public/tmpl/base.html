@@ -8,12 +8,13 @@ body { font-family: Verdana, Arial, sans-serif; margin: 0; background: #ffffff; 
 .msn-header { background: #003366; color: #ffffff; padding: 8px 15px; }
 .msn-header a { color: #ffffff; text-decoration: none; margin-right: 12px; font-size: 11px; }
 .msn-header a:hover { text-decoration: underline; }
+.msn-header img { vertical-align: middle; margin-right: 8px; }
 .msn-nav { background: #3366CC; padding: 4px 15px; }
 .msn-nav a { color: #ffffff; text-decoration: none; margin-right: 15px; font-size: 11px; font-weight: bold; }
 .msn-nav a:hover { text-decoration: underline; }
 .msn-container { width: 768px; margin: 0 auto; padding: 10px; }
 .msn-footer { background: #003366; color: #cccccc; padding: 8px 15px; text-align: center; font-size: 10px; margin-top: 20px; }
-.msn-footer a { color: #cccccc; }
+.msn-footer a { color: #99ccff; }
 .msn-box { border: 1px solid #cccccc; padding: 15px; margin: 10px 0; background: #f8f8f8; }
 .msn-stat { display: inline-block; margin: 10px 20px 10px 0; text-align: center; }
 .msn-stat .num { font-size: 28px; font-weight: bold; color: #003366; }
@@ -30,23 +31,21 @@ body { font-family: Verdana, Arial, sans-serif; margin: 0; background: #ffffff; 
 </head>
 <body>
 <div class="msn-header">
-<a href="/">{{ t.site_title }}</a>
+<img src="/static/logo_msn.gif" alt="MSN" width="27" height="30"><a href="/">{{ t.site_title }}</a>
 <div class="lang-switch">
 {% if lang == 'ga' %}<a href="/?lang=en">{{ t.lang_switch }}</a>{% else %}<a href="/?lang=ga">{{ t.lang_switch }}</a>{% endif %}
 </div>
 </div>
 <div class="msn-nav">
-<a href="/">{{ t.welcome }}</a>
+<a href="/">{{ t.home_link }}</a>
 <a href="/signup">{{ t.signup_link }}</a>
 <a href="/info">{{ t.info_link }}</a>
-<a href="/info/protocol">{{ t.protocol_link }}</a>
-<a href="/admin">{{ t.admin_link }}</a>
 </div>
 <div class="msn-container">
 {% block content %}{% endblock %}
 </div>
 <div class="msn-footer">
-&copy; 2003-2013 Microsoft Corporation. Museum recreation.&nbsp;&nbsp;<a href="/admin">{{ t.admin_link }}</a>
+&#169; 2026 Computer Museum. Project at <a href="https://github.com/emzmo/msn-localserver">github.com/emzmo/msn-localserver</a>
 </div>
 </body>
 </html>

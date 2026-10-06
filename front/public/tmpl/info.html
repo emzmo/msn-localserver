@@ -8,13 +8,13 @@
 </div>
 
 <div id="tab-login-content" style="display:block;">
-<h3>{{ t.login_tab }}: {{ t.sender }} &harr; {{ t.receiver }}</h3>
+<h3>{{ t.login_tab }}: {{ t.client }} &harr; {{ t.server }}</h3>
 <div style="background:#1a1a2e; color:#0f0; padding:15px; border-radius:5px; font-family:monospace; font-size:12px; min-height:350px;">
 <table style="width:100%; font-family:monospace;" id="login-table">
 <tr style="color:#99ccff; font-weight:bold;">
-<td style="width:45%;">{{ t.sender }} (Client)</td>
+<td style="width:45%;">{{ t.client }}</td>
 <td style="width:10%; text-align:center;"></td>
-<td style="width:45%;">{{ t.receiver }} (Server)</td>
+<td style="width:45%;">{{ t.server }}</td>
 </tr>
 <tbody id="login-rows"></tbody>
 </table>
@@ -22,13 +22,14 @@
 </div>
 
 <div id="tab-conv-content" style="display:none;">
-<h3>{{ t.conversation_tab }}: Aoife &harr; S&eacute;amus</h3>
+<h3>{{ t.conversation_tab }}: {% if lang == 'ga' %}Aoife ({{ t.sender }}) &harr; {{ t.server }} &harr; S&eacute;amus ({{ t.receiver }}){% else %}Aoife ({{ t.sender }}) &harr; {{ t.server }} &harr; S&eacute;amus ({{ t.receiver }}){% endif %}</h3>
 <div style="background:#1a1a2e; color:#0f0; padding:15px; border-radius:5px; font-family:monospace; font-size:12px; min-height:350px;">
 <table style="width:100%; font-family:monospace;" id="conv-table">
 <tr style="color:#99ccff; font-weight:bold;">
-<td style="width:45%;">{{ t.sender }} (Aoife)</td>
-<td style="width:10%; text-align:center;"></td>
-<td style="width:45%;">{{ t.receiver }} (S&eacute;amus)</td>
+<td style="width:35%;">Aoife</td>
+<td style="width:15%; text-align:center;">{{ t.server }}</td>
+<td style="width:35%; text-align:right;">S&eacute;amus</td>
+<td style="width:15%; text-align:center;"></td>
 </tr>
 <tbody id="conv-rows"></tbody>
 </table>
@@ -66,35 +67,35 @@ var loginSteps = [
 
 var convSteps = [
 	{dir:'r', text:'XFR 1 SB'},
-	{dir:'l', text:'XFR 1 SB {{ server_ip }}:1864 CKI bc4cd125e70cf7f688d6'},
+	{dir:'c', text:'XFR 1 SB {{ server_ip }}:1864 CKI bc4cd125e70cf7f688d6'},
 	{dir:'c', text:'[Aoife connects to Switchboard port 1864]'},
 	{dir:'r', text:'USR 2 aoife@hotmail.com bc4cd125e70cf7f688d6'},
-	{dir:'l', text:'USR 2 OK aoife@hotmail.com Aoife'},
+	{dir:'c', text:'USR 2 OK aoife@hotmail.com Aoife'},
 	{dir:'r', text:'CAL 3 seamus@hotmail.com'},
-	{dir:'l', text:'CAL 3 RINGING a96cff6b-cf79-41ed-855f-ddf9ce34e631'},
+	{dir:'c', text:'CAL 3 RINGING a96cff6b-cf79-41ed-855f-ddf9ce34e631'},
 	{dir:'c', text:'[RNG sent to Seamus via NS -> Seamus connects to SB]'},
-	{dir:'l', text:'JOI seamus@hotmail.com Seamus'},
-	{dir:'l', text:'IRO 3 1 1 seamus@hotmail.com Seamus'},
+	{dir:'c', text:'JOI seamus@hotmail.com Seamus'},
+	{dir:'c', text:'IRO 3 1 1 seamus@hotmail.com Seamus'},
 	{dir:'r', text:'MSG 4 U 84'},
-	{dir:'l', text:'MSG aoife@hotmail.com Aoife 84'},
+	{dir:'c', text:'MSG aoife@hotmail.com Aoife 84'},
 	{dir:'c', text:'Dia duit, a Shéamuis!'},
-	{dir:'l', text:'MSG seamus@hotmail.com Seamus 71'},
-	{dir:'c', text:'Dia duit, a Aoife!'},
+	{dir:'c', text:'MSG seamus@hotmail.com Seamus 71'},
+	{dir:'c', text:"Dia's Muire duit, a Aoife!"},
 	{dir:'r', text:'MSG 5 U 92'},
-	{dir:'l', text:'MSG aoife@hotmail.com Aoife 92'},
+	{dir:'c', text:'MSG aoife@hotmail.com Aoife 92'},
 	{dir:'c', text:'Conas atá tú inniu?'},
-	{dir:'l', text:'MSG seamus@hotmail.com Seamus 89'},
+	{dir:'c', text:'MSG seamus@hotmail.com Seamus 89'},
 	{dir:'c', text:'Tá mé go maith, go raibh maith agat!'},
 	{dir:'r', text:'MSG 6 U 78'},
-	{dir:'l', text:'MSG aoife@hotmail.com Aoife 78'},
+	{dir:'c', text:'MSG aoife@hotmail.com Aoife 78'},
 	{dir:'c', text:'An bhfuil tú ag dul go dtí an museum?'},
-	{dir:'l', text:'MSG seamus@hotmail.com Seamus 95'},
+	{dir:'c', text:'MSG seamus@hotmail.com Seamus 95'},
 	{dir:'c', text:'Tá, tá sé go hiontach! Feicfidh mé ann thú.'},
 ];
 
 var loginTimer = null, convTimer = null;
 
-function addRow(tbody, step) {
+function addRowLogin(tbody, step) {
 	var tr = document.createElement('tr');
 	var tdL = document.createElement('td');
 	var tdM = document.createElement('td');
@@ -117,45 +118,127 @@ function addRow(tbody, step) {
 		tdL.style.display = 'none';
 		tdR.style.display = 'none';
 	}
-	tr.appendChild(tdL);
-	tr.appendChild(tdM);
-	tr.appendChild(tdR);
+	tr.appendChild(tdL); tr.appendChild(tdM); tr.appendChild(tdR);
 	tr.style.opacity = '0';
 	tr.style.transition = 'opacity 0.3s';
 	tbody.appendChild(tr);
 	setTimeout(function() { tr.style.opacity = '1'; }, 50);
 }
 
-function animate(tableId, steps, timerName) {
-	var tbody = document.getElementById(tableId);
+function addRowConv(tbody, step) {
+	var tr = document.createElement('tr');
+	var tdL = document.createElement('td');
+	var tdM = document.createElement('td');
+	var tdR = document.createElement('td');
+	var tdArrow = document.createElement('td');
+	tdM.style.textAlign = 'center';
+	tdR.style.textAlign = 'right';
+	tdArrow.style.textAlign = 'center';
+	if (step.dir == 'r') {
+		tdL.textContent = step.text;
+		tdL.style.color = '#00ff00';
+		tdArrow.textContent = '->';
+		tdArrow.style.color = '#ffff00';
+		tdR.textContent = '';
+	} else if (step.dir == 'l') {
+		tdR.textContent = step.text;
+		tdR.style.color = '#00ffff';
+		tdArrow.textContent = '<-';
+		tdArrow.style.color = '#ffff00';
+		tdL.textContent = '';
+	} else {
+		tdM.textContent = step.text;
+		tdM.style.color = '#ff9966';
+		tdL.textContent = '';
+		tdR.textContent = '';
+		tdArrow.textContent = '';
+	}
+	tr.appendChild(tdL); tr.appendChild(tdM); tr.appendChild(tdR); tr.appendChild(tdArrow);
+	tr.style.opacity = '0';
+	tr.style.transition = 'opacity 0.3s';
+	tbody.appendChild(tr);
+	setTimeout(function() { tr.style.opacity = '1'; }, 50);
+}
+
+function animateLogin() {
+	var tbody = document.getElementById('login-rows');
 	tbody.innerHTML = '';
 	var i = 0;
 	function next() {
-		if (i < steps.length) {
-			addRow(tbody, steps[i]);
+		if (i < loginSteps.length) {
+			addRowLogin(tbody, loginSteps[i]);
 			i++;
-			timer = setTimeout(next, 900);
-		} else {
-			timer = setTimeout(function() {
-				animate(tableId, steps, timerName);
-			}, 3000);
+			loginTimer = setTimeout(next, 900);
 		}
 	}
-	if (timerName == 'loginTimer') { if (loginTimer) clearTimeout(loginTimer); loginTimer = null; }
-	else { if (convTimer) clearTimeout(convTimer); convTimer = null; }
+	if (loginTimer) clearTimeout(loginTimer);
+	next();
+}
+
+function animateConv() {
+	var tbody = document.getElementById('conv-rows');
+	tbody.innerHTML = '';
+	var i = 0;
+	function next() {
+		if (i < convSteps.length) {
+			addRowConv(tbody, convSteps[i]);
+			i++;
+			convTimer = setTimeout(next, 900);
+		}
+	}
+	if (convTimer) clearTimeout(convTimer);
 	next();
 }
 
 function startLogin() {
 	if (convTimer) { clearTimeout(convTimer); convTimer = null; }
-	animate('login-rows', loginSteps, 'loginTimer');
+	animateLogin();
 }
 
 function startConv() {
 	if (loginTimer) { clearTimeout(loginTimer); loginTimer = null; }
-	animate('conv-rows', convSteps, 'convTimer');
+	animateConv();
 }
 
 startLogin();
 </script>
+
+<h2>{{ t.protocol_title }}</h2>
+
+<h3>{{ t.protocol_versions }}</h3>
+<table class="msn-table" style="width:100%;">
+<tr><th>MSNP</th><th>{{ t.protocol_client }}</th><th>{{ t.protocol_auth }}</th></tr>
+<tr><td>MSNP 2-7</td><td>MSN 1.0-4.7</td><td>MD5</td></tr>
+<tr><td>MSNP 8</td><td>MSN 5.0, WM 4.7</td><td>TWN (Passport)</td></tr>
+<tr><td>MSNP 9</td><td>MSN 6.x</td><td>TWN (Passport)</td></tr>
+<tr><td>MSNP 10-12</td><td>MSN 7.0-7.5</td><td>TWN (Passport)</td></tr>
+<tr><td>MSNP 13-15</td><td>WLM 8.1+</td><td>SSO (RST)</td></tr>
+</table>
+
+<h3>{{ t.key_commands }}</h3>
+<table class="msn-table" style="width:100%;">
+<tr><th>{{ t.command }}</th><th>{{ t.description }}</th></tr>
+<tr><td><code>VER</code></td><td>{{ t.ver_negotiate }}</td></tr>
+<tr><td><code>CVR</code></td><td>{{ t.cvr_report }}</td></tr>
+<tr><td><code>INF</code></td><td>{{ t.inf_security }}</td></tr>
+<tr><td><code>USR</code></td><td>{{ t.usr_auth }}</td></tr>
+<tr><td><code>SYN</code></td><td>{{ t.syn_contacts }}</td></tr>
+<tr><td><code>CHG</code></td><td>{{ t.chg_status }}</td></tr>
+<tr><td><code>XFR</code></td><td>{{ t.xfr_transfer }}</td></tr>
+<tr><td><code>CAL</code></td><td>{{ t.cal_invite }}</td></tr>
+<tr><td><code>MSG</code></td><td>{{ t.msg_send }}</td></tr>
+<tr><td><code>BYE</code></td><td>{{ t.bye_left }}</td></tr>
+</table>
+
+<h3>{{ t.auth_methods }}</h3>
+<div style="background:#f8f8f8; border:1px solid #ccc; padding:12px; margin:10px 0;">
+<p style="margin:0 0 8px 0;"><strong>MD5</strong> (MSNP 2-7):
+{% if lang == 'ga' %}Fíordheimhniú simplí le challenge-response ar chalafort 1863. Gan TLS.
+{% else %}Simple plaintext challenge-response on port 1863. No TLS required.
+{% endif %}</p>
+<p style="margin:0;"><strong>TWN / Passport</strong> (MSNP 8+):
+{% if lang == 'ga' %}Fíordheimhniú trí HTTPS ar chalafort 443 (SSLv3/TLS 1.0). Úsáidtear an geata SSLv3.
+{% else %}HTTPS-based authentication on port 443 (SSLv3/TLS 1.0). Uses the SSLv3 gateway.
+{% endif %}</p>
+</div>
 {% endblock %}

@@ -7,46 +7,18 @@
 <p style="color:#cc0000; font-weight:bold; background:#ffeeee; padding:8px; border:1px solid #cc0000;">{{ error_msg }}</p>
 {% endif %}
 
-<div style="background:#f0f7ff; border:1px solid #3366CC; padding:15px; margin:10px 0; width:350px;">
+<div style="background:#f0f7ff; border:1px solid #3366CC; padding:15px; margin:10px 0; width:400px;">
 <form method="post" action="/signup">
 <table>
 <tr><td><label for="email">{{ t.email }}:</label></td><td><input type="text" name="email" id="email" class="msn-input" size="25"></td></tr>
 <tr><td><label for="password">{{ t.password }}:</label></td><td><input type="password" name="password" id="password" class="msn-input" size="15"></td></tr>
-<tr><td><label for="name">{{ t.display_name }}:</label></td><td>
-<select name="name" class="msn-input">
-<option value="">--</option>
-<option value="Aoife">Aoife</option>
-<option value="Séamus">Séamus</option>
-<option value="Cillian">Cillian</option>
-<option value="Niamh">Niamh</option>
-<option value="Liam">Liam</option>
-<option value="Saoirse">Saoirse</option>
-<option value="Conor">Conor</option>
-<option value="Éabha">Éabha</option>
-<option value="Tadhg">Tadhg</option>
-<option value="Maeve">Maeve</option>
-<option value="Fionn">Fionn</option>
-<option value="Róisín">Róisín</option>
-<option value="Declan">Declan</option>
-<option value="Ciara">Ciara</option>
-<option value="Patrick">Patrick</option>
-<option value="Bridget">Bridget</option>
-<option value="Sean">Sean</option>
-<option value="Grace">Grace</option>
-<option value="Owen">Owen</option>
-<option value="Cáit">Cáit</option>
-<option value="Pádraig">Pádraig</option>
-<option value="Sinéad">Sinéad</option>
-<option value="Darragh">Darragh</option>
-<option value="Aoibhinn">Aoibhinn</option>
-<option value="Eoin">Eoin</option>
-<option value="Clodagh">Clodagh</option>
-<option value="Niall">Niall</option>
-<option value="Meabh">Meabh</option>
-<option value="Ruairi">Ruairi</option>
-<option value="Aisling">Aisling</option>
-<option value="Cian">Cian</option>
-</select>
+<tr><td><label for="name">{{ t.display_name }}:</label></td><td><input type="text" name="name" id="name" class="msn-input" size="25" maxlength="50"></td></tr>
+<tr><td></td><td style="font-size:10px; color:#666;">
+{% if lang == 'ga' %}
+<a href="/emoticons_list" target="_blank" style="color:#3366CC;">Féach ar liosta emoji MSN</a> le haghaidh gearrchodanna
+{% else %}
+<a href="/emoticons_list" target="_blank" style="color:#3366CC;">View MSN emoji list</a> for shortcuts
+{% endif %}
 </td></tr>
 <tr><td></td><td><button type="submit" class="msn-btn">{{ t.create_account }}</button></td></tr>
 </table>
