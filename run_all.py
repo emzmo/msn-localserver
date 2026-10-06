@@ -6,6 +6,9 @@ def main(*, devmode = False):
 	import front.bot
 	import settings
 	import front.admin
+	import db
+	
+	db.Base.metadata.create_all(db.engine)
 	
 	if devmode:
 		http_port = 80

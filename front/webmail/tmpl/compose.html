@@ -7,6 +7,8 @@
 <div class="hm-error">Please specify a recipient.</div>
 {% elif error == 'unknown_recipient' %}
 <div class="hm-error">The recipient address does not exist on this server. You can only send mail to other MSN Museum users.</div>
+{% elif error == 'too_long' %}
+<div class="hm-error">Message too long. Subject max 200 chars, body max 50000 chars.</div>
 {% endif %}
 
 <form method="post" action="/webmail/compose" style="width: 100%;">

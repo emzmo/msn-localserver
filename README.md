@@ -11,6 +11,7 @@ A fork of [v1ckxy/MSN](https://github.com/v1ckxy/MSN) optimized for offline muse
 - **Rate limiting & session timeouts** — connection flood protection (5/10s per IP), message flood protection (10/5s per session), 4096-byte message cap, 15-minute idle timeout, signup rate limit (1/15s per IP). Designed for unattended kiosk use.
 - **SSLv3/TLS 1.0 gateway** — a C-based reverse proxy using OpenSSL 1.0.2, enabling Passport/TWN authentication for MSNP 8+ clients on Windows XP.
 - **Auto-restart** — both services (Python server + C gateway) use systemd `Restart=always`.
+- **Local Hotmail** — a retro webmail interface at `http://<pi-ip>:8082/webmail/` where visitors can log in with their MSN account, read and compose emails to other museum visitors. Unread counts appear in MSN Messenger on login (MSNP 8+ clients).
 
 ## Architecture
 
@@ -33,7 +34,7 @@ XP Clients (stock, unpatched)                 Raspberry Pi 2
 | Notification Server (NS) | 1863 | Python asyncio | MSNP protocol — presence, contact list, auth |
 | Switchboard (SB) | 1864 | Python asyncio | Chat sessions (1:1 and group) |
 | HTTP API | 8081 | Python aiohttp | Passport login, SOAP endpoints, MsgrConfig |
-| Admin & Public UI | 8082 | Python aiohttp | Staff admin interface + bilingual public pages (landing, signup, info) |
+| Admin & Public UI | 8082 | Python aiohttp | Staff admin interface + bilingual public pages (landing, signup, info) + Local Hotmail webmail |
 | SSLv3 Gateway | 443 | C + OpenSSL 1.0.2u | TLS termination → proxy to 8081 |
 
 ## Client Compatibility
@@ -77,6 +78,7 @@ LOGIN_HOST = 'login.passport.com'   # Hostname for Passport/CVR responses
 STORAGE_HOST = 'login.passport.com'
 SB_HOST = '192.168.x.x'             # Your Pi's LAN IP
 SB_PORT = 1864
+WEBMAIL_URL = 'http://192.168.x.x:8082/webmail/'  # Local Hotmail base URL
 ADMIN_PASSWORD = 'your-password'    # Change this!
 SESSION_TIMEOUT = 900               # 15 minutes
 DEBUG = False
@@ -135,6 +137,17 @@ Features:
 - **Online** — list of currently connected users with IP addresses
 - **Conversations** — paginated message history with email filter
 - **Setup** — step-by-step XP client setup guide with downloadable installers and CA cert
+
+## Local Hotmail
+
+The server includes a retro Hotmail-style webmail interface, accessible at `http://<pi-ip>:8082/webmail/`.
+
+- **Login** — visitors sign in with the same email address and password they use for MSN Messenger.
+- **Inbox** — shows all emails received, with unread messages in bold.
+- **Compose** — send an email to another museum visitor (recipient must be a registered MSN user).
+- **MSN integration** — when a user logs into MSN Messenger, the server sends the unread mail count so the client's inbox icon lights up (MSNP 8+ / MSN 6.0+ clients).
+- **Configuration** — set `WEBMAIL_URL` in `settings_local.py` to the base URL of the webmail (e.g. `http://172.16.0.20:8082/webmail/`). This URL is embedded in the MSNP `MSG Hotmail` payload so the MSN client's "Inbox" and "Send email" links open the webmail.
+- **Database** — the `t_mail` table is created automatically on server startup via `db.Base.metadata.create_all()`. No manual migration is required.
 
 ## Staff Guide
 

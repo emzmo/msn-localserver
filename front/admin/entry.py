@@ -146,6 +146,11 @@ async def handle_user_delete(req):
 	with DBSession() as sess:
 		user = sess.query(User).filter(User.email == email).one_or_none()
 		if user:
+			from db import MailMessage
+			sess.query(MailMessage).filter(
+				(MailMessage.sender_email == email) |
+				(MailMessage.recipient_email == email)
+			).delete()
 			sess.delete(user)
 	return _redirect('/admin/users')
 
@@ -218,6 +223,11 @@ async def handle_user_wipe(req):
 	old_msn = form.get('old_msn') == 'on'
 	pattern = '{}%@{}'.format(prefix, domain)
 	with DBSession() as sess:
+		from db import MailMessage
+		sess.query(MailMessage).filter(
+			(MailMessage.sender_email.like(pattern)) |
+			(MailMessage.recipient_email.like(pattern))
+		).delete()
 		sess.query(User).filter(User.email.like(pattern)).delete()
 	if recreate:
 		for i in range(1, count + 1):

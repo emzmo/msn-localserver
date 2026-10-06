@@ -172,6 +172,8 @@ async def handle_compose_post(req):
 	body = (form.get('body', '') or '')
 	if not to:
 		return _redirect('/webmail/compose?error=no_recipient')
+	if len(to) > 320 or len(subject) > 200 or len(body) > 50000:
+		return _redirect('/webmail/compose?error=too_long&to=' + url_quote(to))
 	with DBSession() as sess:
 		recipient = sess.query(User).filter(User.email == to).one_or_none()
 		if recipient is None:

@@ -85,6 +85,16 @@ The admin website lets you manage accounts and monitor the server.
 - The protocol info page at **http://SERVER_IP:8082/info** shows an animated diagram.
 - The website defaults to Irish. Click "English" in the top right to switch languages.
 
+### Webmail (Local Hotmail)
+Visitors can access a retro Hotmail-style webmail interface in any web browser:
+
+1. Open **http://172.16.0.20:8082/webmail/** (or replace the IP with your Pi's address).
+2. Log in with the same email address and password used for MSN Messenger.
+3. The **Inbox** shows all received emails. Unread messages appear in bold.
+4. Click **Compose** to write an email to another museum visitor. You can only send mail to people who have an MSN account on this server.
+5. When a new email arrives, the recipient will see the unread count in MSN Messenger the next time they sign in (the inbox icon lights up, on MSN 6.0 and later).
+6. Click **Sign out** in the top right to log out.
+
 ## Troubleshooting
 
 ### A visitor can't sign in
@@ -111,6 +121,7 @@ The admin website lets you manage accounts and monitor the server.
 |---|---|
 | Pi IP address | (set during installation) |
 | Admin URL | http://SERVER_IP:8082/admin |
+| Webmail URL | http://SERVER_IP:8082/webmail/ |
 | Admin password | (set during installation) |
 | Supported clients | Windows Messenger 4.7, MSN Messenger 5.0 |
 | MSN 7.5 | Not recommended (known sign-in issue) |
