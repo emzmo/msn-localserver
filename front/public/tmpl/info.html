@@ -22,14 +22,13 @@
 </div>
 
 <div id="tab-conv-content" style="display:none;">
-<h3>{{ t.conversation_tab }}: {% if lang == 'ga' %}Aoife ({{ t.sender }}) &harr; {{ t.server }} &harr; S&eacute;amus ({{ t.receiver }}){% else %}Aoife ({{ t.sender }}) &harr; {{ t.server }} &harr; S&eacute;amus ({{ t.receiver }}){% endif %}</h3>
+<h3>{{ t.conversation_tab }}: Aoife &harr; S&eacute;amus</h3>
 <div style="background:#1a1a2e; color:#0f0; padding:15px; border-radius:5px; font-family:monospace; font-size:12px; min-height:350px;">
 <table style="width:100%; font-family:monospace;" id="conv-table">
 <tr style="color:#99ccff; font-weight:bold;">
-<td style="width:35%;">Aoife</td>
-<td style="width:15%; text-align:center;">{{ t.server }}</td>
-<td style="width:35%; text-align:right;">S&eacute;amus</td>
-<td style="width:15%; text-align:center;"></td>
+<td style="width:45%;">Aoife</td>
+<td style="width:10%; text-align:center;"></td>
+<td style="width:45%;">S&eacute;amus</td>
 </tr>
 <tbody id="conv-rows"></tbody>
 </table>
@@ -67,35 +66,35 @@ var loginSteps = [
 
 var convSteps = [
 	{dir:'r', text:'XFR 1 SB'},
-	{dir:'c', text:'XFR 1 SB {{ server_ip }}:1864 CKI bc4cd125e70cf7f688d6'},
+	{dir:'l', text:'XFR 1 SB {{ server_ip }}:1864 CKI bc4cd125e70cf7f688d6'},
 	{dir:'c', text:'[Aoife connects to Switchboard port 1864]'},
 	{dir:'r', text:'USR 2 aoife@hotmail.com bc4cd125e70cf7f688d6'},
-	{dir:'c', text:'USR 2 OK aoife@hotmail.com Aoife'},
+	{dir:'l', text:'USR 2 OK aoife@hotmail.com Aoife'},
 	{dir:'r', text:'CAL 3 seamus@hotmail.com'},
-	{dir:'c', text:'CAL 3 RINGING a96cff6b-cf79-41ed-855f-ddf9ce34e631'},
+	{dir:'l', text:'CAL 3 RINGING a96cff6b-cf79-41ed-855f-ddf9ce34e631'},
 	{dir:'c', text:'[RNG sent to Seamus via NS -> Seamus connects to SB]'},
-	{dir:'c', text:'JOI seamus@hotmail.com Seamus'},
-	{dir:'c', text:'IRO 3 1 1 seamus@hotmail.com Seamus'},
+	{dir:'l', text:'JOI seamus@hotmail.com Seamus'},
+	{dir:'l', text:'IRO 3 1 1 seamus@hotmail.com Seamus'},
 	{dir:'r', text:'MSG 4 U 84'},
-	{dir:'c', text:'MSG aoife@hotmail.com Aoife 84'},
+	{dir:'l', text:'MSG aoife@hotmail.com Aoife 84'},
 	{dir:'c', text:'Dia duit, a Shéamuis!'},
-	{dir:'c', text:'MSG seamus@hotmail.com Seamus 71'},
+	{dir:'l', text:'MSG seamus@hotmail.com Seamus 71'},
 	{dir:'c', text:"Dia's Muire duit, a Aoife!"},
 	{dir:'r', text:'MSG 5 U 92'},
-	{dir:'c', text:'MSG aoife@hotmail.com Aoife 92'},
+	{dir:'l', text:'MSG aoife@hotmail.com Aoife 92'},
 	{dir:'c', text:'Conas atá tú inniu?'},
-	{dir:'c', text:'MSG seamus@hotmail.com Seamus 89'},
+	{dir:'l', text:'MSG seamus@hotmail.com Seamus 89'},
 	{dir:'c', text:'Tá mé go maith, go raibh maith agat!'},
 	{dir:'r', text:'MSG 6 U 78'},
-	{dir:'c', text:'MSG aoife@hotmail.com Aoife 78'},
+	{dir:'l', text:'MSG aoife@hotmail.com Aoife 78'},
 	{dir:'c', text:'An bhfuil tú ag dul go dtí an museum?'},
-	{dir:'c', text:'MSG seamus@hotmail.com Seamus 95'},
+	{dir:'l', text:'MSG seamus@hotmail.com Seamus 95'},
 	{dir:'c', text:'Tá, tá sé go hiontach! Feicfidh mé ann thú.'},
 ];
 
 var loginTimer = null, convTimer = null;
 
-function addRowLogin(tbody, step) {
+function addRow(tbody, step) {
 	var tr = document.createElement('tr');
 	var tdL = document.createElement('td');
 	var tdM = document.createElement('td');
@@ -125,79 +124,28 @@ function addRowLogin(tbody, step) {
 	setTimeout(function() { tr.style.opacity = '1'; }, 50);
 }
 
-function addRowConv(tbody, step) {
-	var tr = document.createElement('tr');
-	var tdL = document.createElement('td');
-	var tdM = document.createElement('td');
-	var tdR = document.createElement('td');
-	var tdArrow = document.createElement('td');
-	tdM.style.textAlign = 'center';
-	tdR.style.textAlign = 'right';
-	tdArrow.style.textAlign = 'center';
-	if (step.dir == 'r') {
-		tdL.textContent = step.text;
-		tdL.style.color = '#00ff00';
-		tdArrow.textContent = '->';
-		tdArrow.style.color = '#ffff00';
-		tdR.textContent = '';
-	} else if (step.dir == 'l') {
-		tdR.textContent = step.text;
-		tdR.style.color = '#00ffff';
-		tdArrow.textContent = '<-';
-		tdArrow.style.color = '#ffff00';
-		tdL.textContent = '';
-	} else {
-		tdM.textContent = step.text;
-		tdM.style.color = '#ff9966';
-		tdL.textContent = '';
-		tdR.textContent = '';
-		tdArrow.textContent = '';
-	}
-	tr.appendChild(tdL); tr.appendChild(tdM); tr.appendChild(tdR); tr.appendChild(tdArrow);
-	tr.style.opacity = '0';
-	tr.style.transition = 'opacity 0.3s';
-	tbody.appendChild(tr);
-	setTimeout(function() { tr.style.opacity = '1'; }, 50);
-}
-
-function animateLogin() {
-	var tbody = document.getElementById('login-rows');
+function animate(tableId, steps) {
+	var tbody = document.getElementById(tableId);
 	tbody.innerHTML = '';
 	var i = 0;
 	function next() {
-		if (i < loginSteps.length) {
-			addRowLogin(tbody, loginSteps[i]);
+		if (i < steps.length) {
+			addRow(tbody, steps[i]);
 			i++;
-			loginTimer = setTimeout(next, 900);
+			timer = setTimeout(next, 900);
 		}
 	}
-	if (loginTimer) clearTimeout(loginTimer);
-	next();
-}
-
-function animateConv() {
-	var tbody = document.getElementById('conv-rows');
-	tbody.innerHTML = '';
-	var i = 0;
-	function next() {
-		if (i < convSteps.length) {
-			addRowConv(tbody, convSteps[i]);
-			i++;
-			convTimer = setTimeout(next, 900);
-		}
-	}
-	if (convTimer) clearTimeout(convTimer);
 	next();
 }
 
 function startLogin() {
 	if (convTimer) { clearTimeout(convTimer); convTimer = null; }
-	animateLogin();
+	animate('login-rows', loginSteps);
 }
 
 function startConv() {
 	if (loginTimer) { clearTimeout(loginTimer); loginTimer = null; }
-	animateConv();
+	animate('conv-rows', convSteps);
 }
 
 startLogin();
