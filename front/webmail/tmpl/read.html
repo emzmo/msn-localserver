@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}MSN Hotmail - Read Message{% endblock %}
+{% block content %}
+<div class="hm-pagehead">Read Message</div>
+
+<div style="margin-bottom: 8px;">
+	<a href="/webmail/inbox" class="hm-btn hm-btn-sec">Back to Inbox</a>
+	<a href="/webmail/compose?to={{ msg.sender if msg else '' }}" class="hm-btn hm-btn-sec">Reply</a>
+</div>
+
+{% if not_found %}
+<div class="hm-error">The message you requested could not be found.</div>
+{% else %}
+<div class="hm-header-block">
+	<div class="row"><span class="lbl">From:</span> {{ msg.sender }}</div>
+	<div class="row"><span class="lbl">To:</span> {{ msg.recipient }}</div>
+	<div class="row"><span class="lbl">Subject:</span> {{ msg.subject }}</div>
+	<div class="row"><span class="lbl">Date:</span> {{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+</div>
+
+<div class="hm-body-block">{{ msg.body }}</div>
+{% endif %}
+{% endblock %}

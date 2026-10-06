@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}MSN Hotmail - Inbox{% endblock %}
+{% block content %}
+<div class="hm-pagehead">Inbox <span style="float:right; font-weight:normal; color:#666666; font-size:11px;">
+	{{ unread_count }} unread of {{ total_count }} message(s)
+</span></div>
+
+<div style="margin-bottom: 8px;">
+	<a href="/webmail/compose" class="hm-btn">Compose Message</a>
+	<a href="/webmail/inbox" class="hm-btn hm-btn-sec">Refresh</a>
+</div>
+
+{% if messages %}
+<table class="hm-table">
+	<tr>
+		<th style="width: 24px;">&nbsp;</th>
+		<th style="width: 180px;">From</th>
+		<th>Subject</th>
+		<th style="width: 140px;">Date</th>
+	</tr>
+	{% for m in messages %}
+	<tr class="{{ 'unread' if not m.is_read else 'read' }}">
+		<td style="text-align:center;">{% if not m.is_read %}&#9993;{% endif %}</td>
+		<td>{{ m.sender }}</td>
+		<td><a href="/webmail/read/{{ m.id }}">{{ m.subject }}</a></td>
+		<td>{{ m.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% else %}
+<div class="hm-empty">Your inbox is empty.</div>
+{% endif %}
+{% endblock %}

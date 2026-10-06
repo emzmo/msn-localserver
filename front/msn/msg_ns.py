@@ -160,7 +160,13 @@ def _util_usr_final(sess, trid, token):
 	)
 	sess.send_reply('MSG', 'Hotmail', 'Hotmail', msg1)
 	
-	msg2 = _encode_payload(PAYLOAD_MSG_2)
+	unread = _get_unread_mail_count(user.email)
+	msg2 = _encode_payload(PAYLOAD_MSG_2,
+		unread_inbox = unread, unread_other = 0,
+		inbox_url = settings.WEBMAIL_URL + 'inbox',
+		folders_url = settings.WEBMAIL_URL,
+		post_url = settings.WEBMAIL_URL,
+	)
 	sess.send_reply('MSG', 'Hotmail', 'Hotmail', msg2)
 
 # State = Live
@@ -521,10 +527,10 @@ MPOPEnabled: 1
 PAYLOAD_MSG_2 = '''MIME-Version: 1.0
 Content-Type: text/x-msmsgsinitialmdatanotification; charset=UTF-8
 
-Mail-Data: <MD><E><I>0</I><IU>0</IU><O>0</O><OU>0</OU></E><Q><QTM>409600</QTM><QNM>204800</QNM></Q></MD>
-Inbox-URL: /cgi-bin/HoTMaiL
-Folders-URL: /cgi-bin/folders
-Post-URL: http://www.hotmail.com
+Mail-Data: <MD><E><I>{unread_inbox}</I><IU>{unread_inbox}</IU><O>{unread_other}</O><OU>{unread_other}</OU></E><Q><QTM>409600</QTM><QNM>204800</QNM></Q></MD>
+Inbox-URL: {inbox_url}
+Folders-URL: {folders_url}
+Post-URL: {post_url}
 '''
 
 SHIELDS = '''<?xml version="1.0" encoding="utf-8" ?>
@@ -540,3 +546,14 @@ def _uuid_to_high_low(u):
 	high = u.time_low % (1<<32)
 	low = u.node % (1<<32)
 	return (high, low)
+
+def _get_unread_mail_count(email):
+	try:
+		from db import Session as DBSession, MailMessage
+		with DBSession() as sess:
+			return sess.query(MailMessage).filter(
+				MailMessage.recipient_email == email,
+				MailMessage.is_read == False,
+			).count()
+	except Exception:
+		return 0

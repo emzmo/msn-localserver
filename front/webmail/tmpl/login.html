@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}MSN Hotmail - Sign In{% endblock %}
+{% block content %}
+<div class="hm-pagehead">Sign in to MSN Hotmail</div>
+
+{% if error == 'invalid' %}
+<div class="hm-error">The e-mail address or password is incorrect. Please try again.</div>
+{% endif %}
+
+<form method="post" action="/webmail/login" style="width: 320px; margin: 20px auto;">
+	<table class="hm-fields">
+		<tr>
+			<th>E-mail address</th>
+			<td><input type="text" name="email" class="hm-input" value=""></td>
+		</tr>
+		<tr>
+			<th>Password</th>
+			<td><input type="password" name="password" class="hm-input" value=""></td>
+		</tr>
+		<tr>
+			<th></th>
+			<td style="padding-top: 10px;">
+				<button type="submit" class="hm-btn">Sign in</button>
+			</td>
+		</tr>
+	</table>
+	<div class="hm-legend">Use the same e-mail address and password as your MSN Messenger account.</div>
+</form>
+{% endblock %}

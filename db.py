@@ -52,6 +52,17 @@ class Conversation(Base):
 	body = sa.Column(sa.Text, nullable = False)
 	timestamp = sa.Column(sa.DateTime, default = datetime.utcnow)
 
+class MailMessage(Base):
+	__tablename__ = 't_mail'
+	
+	id = sa.Column(sa.Integer, primary_key = True)
+	sender_email = sa.Column(sa.String, nullable = False)
+	recipient_email = sa.Column(sa.String, nullable = False)
+	subject = sa.Column(sa.String, nullable = False)
+	body = sa.Column(sa.Text, nullable = False)
+	timestamp = sa.Column(sa.DateTime, default = datetime.utcnow)
+	is_read = sa.Column(sa.Boolean, default = False)
+
 
 engine = sa.create_engine(settings.DB)
 session_factory = sessionmaker(bind = engine)

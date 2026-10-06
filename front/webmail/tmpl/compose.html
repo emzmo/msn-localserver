@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}MSN Hotmail - Compose{% endblock %}
+{% block content %}
+<div class="hm-pagehead">Compose Message</div>
+
+{% if error == 'no_recipient' %}
+<div class="hm-error">Please specify a recipient.</div>
+{% elif error == 'unknown_recipient' %}
+<div class="hm-error">The recipient address does not exist on this server. You can only send mail to other MSN Museum users.</div>
+{% endif %}
+
+<form method="post" action="/webmail/compose" style="width: 100%;">
+	<table class="hm-fields" style="margin-bottom: 10px;">
+		<tr>
+			<th>To:</th>
+			<td><input type="text" name="to" class="hm-input" value="{{ to }}"></td>
+		</tr>
+		<tr>
+			<th>Subject:</th>
+			<td><input type="text" name="subject" class="hm-input" value=""></td>
+		</tr>
+	</table>
+	<textarea name="body" class="hm-textarea" rows="14" placeholder="Type your message here..."></textarea>
+	<div style="margin-top: 10px;">
+		<button type="submit" class="hm-btn">Send</button>
+		<a href="/webmail/inbox" class="hm-btn hm-btn-sec">Cancel</a>
+	</div>
+</form>
+{% endblock %}

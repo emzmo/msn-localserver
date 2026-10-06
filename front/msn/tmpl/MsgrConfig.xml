@@ -84,6 +84,11 @@
 			<SpaceBaseUrl></SpaceBaseUrl>
 			<SpaceIntegrationEnabled>false</SpaceIntegrationEnabled>
 		</ContactCard>
+		<MailConfig>
+			<InboxURL>http://{server_ip}:8082/webmail/inbox</InboxURL>
+			<ComposeURL>http://{server_ip}:8082/webmail/compose</ComposeURL>
+			<SendEmailURL>http://{server_ip}:8082/webmail/compose</SendEmailURL>
+		</MailConfig>
 		<MSNSearch>
 			<DesktopInstallURL></DesktopInstallURL>
 			<ImagesURL></ImagesURL>

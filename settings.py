@@ -4,6 +4,7 @@ LOGIN_HOST = 'login.passport.com'
 STORAGE_HOST = LOGIN_HOST
 SB_HOST = LOGIN_HOST
 SB_PORT = 1864
+WEBMAIL_URL = 'http://172.16.0.20:8082/webmail/'
 ADMIN_PASSWORD = 'changeme'
 SESSION_TIMEOUT = 900
 DEBUG = False
