@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>MSNP Console</title>
+<style>
+body { font-family: monospace; margin: 0; background: #1a1a2e; color: #0f0; font-size: 12px; }
+.header { background: #003366; color: #fff; padding: 6px 12px; font-family: sans-serif; }
+.header a { color: #99ccff; text-decoration: none; margin-right: 12px; }
+.container { display: flex; height: calc(100vh - 32px); }
+.left-panel { width: 350px; border-right: 1px solid #333; overflow-y: auto; padding: 6px; }
+.right-panel { flex: 1; display: flex; flex-direction: column; }
+.log-area { flex: 1; overflow-y: auto; padding: 6px; }
+.sb-area { height: 150px; border-top: 1px solid #333; overflow-y: auto; padding: 6px; color: #ff9966; }
+.input-bar { background: #0d1117; padding: 6px; border-top: 1px solid #333; display: flex; gap: 6px; }
+input, select, button { font-family: monospace; font-size: 12px; background: #0d1117; color: #0f0; border: 1px solid #333; padding: 3px 6px; }
+button { cursor: pointer; background: #1a3a5c; }
+button:hover { background: #2a4a6c; }
+.btn-danger { background: #5c1a1a; }
+.btn-danger:hover { background: #6c2a2a; }
+table { width: 100%; border-collapse: collapse; }
+th { color: #99ccff; text-align: left; padding: 3px 4px; font-size: 10px; border-bottom: 1px solid #333; }
+td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
+.log-entry { padding: 1px 0; }
+.log-in { color: #00ff00; }
+.log-out { color: #00ffff; }
+.log-info { color: #ff9966; }
+.sb-entry { padding: 1px 0; }
+.label { color: #99ccff; font-weight: bold; }
+.stats { color: #666; font-size: 10px; padding: 4px 0; }
+</style>
+</head>
+<body>
+<div class="header">
+<a href="/admin">Admin</a> | <a href="/admin/console">Console</a>
+<span style="float:right" id="stats"></span>
+</div>
+<div class="container">
+<div class="left-panel">
+<div class="label">Sessions</div>
+<table id="sessions-table">
+<thead><tr><th>ID</th><th>Email</th><th>Client</th><th>Status</th><th></th></tr></thead>
+<tbody id="sessions"></tbody>
+</table>
+</div>
+<div class="right-panel">
+<div class="log-area" id="log"></div>
+<div class="sb-area" id="sb-log">
+<div class="label">Chat Messages</div>
+</div>
+<div class="input-bar">
+<select id="sess-select"><option value="">Session...</option></select>
+<input type="text" id="cmd-input" placeholder="Raw MSNP command..." style="flex:1" onkeypress="if(event.key==='Enter')sendCmd()">
+<button onclick="sendCmd()">Send</button>
+<input type="text" id="msg-email" placeholder="user@hotmail.com" style="width:160px">
+<input type="text" id="msg-text" placeholder="Server message..." style="flex:1" onkeypress="if(event.key==='Enter')sendMsg()">
+<button onclick="sendMsg()">MSG</button>
+<button onclick="broadcast()" class="btn-danger">Broadcast</button>
+</div>
+</div>
+</div>
+<script>
+var logSeq = 0, sbSeq = 0;
+function authFetch(url, opts) {
+	return fetch(url, Object.assign({credentials: 'same-origin'}, opts));
+}
+function authPost(url, data) {
+	return fetch(url, {credentials: 'same-origin', method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+}
+async function updateSessions() {
+	var r = await authFetch('/admin/console/api/sessions');
+	if (!r.ok) return;
+	var d = await r.json();
+	var tbody = document.getElementById('sessions');
+	var sel = document.getElementById('sess-select');
+	tbody.innerHTML = '';
+	sel.innerHTML = '<option value="">Session...</option>';
+	d.sessions.forEach(function(s) {
+		var tr = document.createElement('tr');
+		tr.innerHTML = '<td>' + s.id + '</td><td>' + s.email + '</td><td>' + s.client + '</td><td>' + s.status + '</td>' +
+			'<td><button class="btn-danger" style="font-size:10px;padding:1px 4px" onclick="bootUser(\'' + s.email + '\')">Boot</button></td>';
+		tbody.appendChild(tr);
+		var opt = document.createElement('option');
+		opt.value = s.id;
+		opt.text = s.id + ' ' + s.email;
+		sel.appendChild(opt);
+	});
+	document.getElementById('stats').textContent = d.sessions.length + ' sessions';
+}
+async function updateLog() {
+	var r = await authFetch('/admin/console/api/log?since=' + logSeq);
+	if (!r.ok) return;
+	var d = await r.json();
+	if (d.latest_seq) logSeq = d.latest_seq;
+	var area = document.getElementById('log');
+	d.entries.forEach(function(e) {
+		var div = document.createElement('div');
+		var cls = e.dir === '>>>' ? 'log-in' : (e.dir === '<<<' ? 'log-out' : 'log-info');
+		div.className = 'log-entry ' + cls;
+		var ts = new Date(e.ts * 1000).toLocaleTimeString();
+		div.textContent = '[' + ts + '] ' + e.session + ' ' + e.dir + ' ' + e.cmd;
+		area.appendChild(div);
+	});
+	if (d.entries.length > 0) area.scrollTop = area.scrollHeight;
+	if (area.childNodes.length > 300) area.removeChild(area.firstChild);
+}
+async function updateSB() {
+	var r = await authFetch('/admin/console/api/sb?since=' + sbSeq);
+	if (!r.ok) return;
+	var d = await r.json();
+	if (d.latest_seq) sbSeq = d.latest_seq;
+	var area = document.getElementById('sb-log');
+	d.entries.forEach(function(e) {
+		var div = document.createElement('div');
+		div.className = 'sb-entry';
+		var ts = new Date(e.ts * 1000).toLocaleTimeString();
+		div.textContent = '[' + ts + '] ' + e.sender + ' -> ' + e.recipient + ': ' + e.body;
+		area.appendChild(div);
+	});
+	if (d.entries.length > 0) area.scrollTop = area.scrollHeight;
+}
+async function sendCmd() {
+	var sel = document.getElementById('sess-select');
+	var inp = document.getElementById('cmd-input');
+	if (!sel.value || !inp.value) return;
+	await authPost('/admin/console/api/send', {session_id: sel.value, command: inp.value});
+	inp.value = '';
+}
+async function sendMsg() {
+	var email = document.getElementById('msg-email').value;
+	var text = document.getElementById('msg-text').value;
+	if (!email || !text) return;
+	await authPost('/admin/console/api/msg', {email: email, text: text});
+	document.getElementById('msg-text').value = '';
+}
+async function broadcast() {
+	var text = document.getElementById('msg-text').value;
+	if (!text) return;
+	await authPost('/admin/console/api/broadcast', {text: text});
+	document.getElementById('msg-text').value = '';
+}
+async function bootUser(email) {
+	if (!confirm('Boot ' + email + '?')) return;
+	await authPost('/admin/console/api/boot', {email: email});
+}
+setInterval(updateSessions, 2000);
+setInterval(updateLog, 2000);
+setInterval(updateSB, 2000);
+updateSessions();
+updateLog();
+updateSB();
+</script>
+</body>
+</html>

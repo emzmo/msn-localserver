@@ -160,6 +160,13 @@ def _msnp_encode(m: List[object], buf, logger) -> None:
 		m[-1] = len(data)
 	m = tuple(str(x).replace(' ', '%20') for x in m if x is not None)
 	_truncated_log(logger, '<<<', m)
+	try:
+		from front.admin.console import log_command
+		sess_id = logger.prefix if logger else '????'
+		cmd_str = ' '.join(str(x) for x in m if x is not None)[:200]
+		log_command(sess_id, sess_id.split('/')[0] if '/' in sess_id else 'NS', '<<<', cmd_str)
+	except Exception:
+		pass
 	w = buf.write
 	w(' '.join(m).encode('utf-8'))
 	w(b'\r\n')

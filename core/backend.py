@@ -535,6 +535,14 @@ def _log_conversation(chat_id, sender, data, users_by_sess):
 		body = body.strip()
 		if not body:
 			return
+		try:
+			from front.admin.console import log_sb_message
+			for sess, su in users_by_sess.items():
+				if su is sender:
+					continue
+				log_sb_message(chat_id, sender.email, su.email, body)
+		except Exception:
+			pass
 		with DBSession() as dbsess:
 			for sess, su in users_by_sess.items():
 				if su is sender:

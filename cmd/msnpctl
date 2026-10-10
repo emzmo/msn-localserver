@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""MSNP Console CLI — control and monitor the MSN Museum server.
+
+Usage:
+  msnpctl sessions          List active sessions
+  msnpctl log [-f]          Show command log (-f = follow mode)
+  msnpctl sb                Show chat message log
+  msnpctl send <sess_id> <command>   Send raw MSNP command to session
+  msnpctl msg <email> <text>         Send server MSG to user
+  msnpctl boot <email>               Boot user from server
+  msnpctl broadcast <text>           Broadcast MSG to all online users
+
+Requires the server to be running with admin console enabled.
+API URL defaults to http://127.0.0.1:8082 — override with MSNPCTL_URL env var.
+Admin password defaults to 'museum' — override with MSNPCTL_PASS env var.
+"""
+import sys
+import os
+import json
+import time
+import hmac
+import urllib.request
+import urllib.parse
+
+API_URL = os.environ.get('MSNPCTL_URL', 'http://127.0.0.1:8082')
+ADMIN_PASS = os.environ.get('MSNPCTL_PASS', 'museum')
+COOKIE_NAME = 'msn_admin'
+
+def _get_cookie():
+	import secrets
+	token = secrets.token_hex(16)
+	secret = ADMIN_PASS
+	sig = hmac.new(secret.encode(), token.encode(), 'sha256').hexdigest()
+	return '{}:{}'.format(token, sig)
+
+_cookie = _get_cookie()
+
+def _api_get(path):
+	url = API_URL + path
+	req = urllib.request.Request(url)
+	req.add_header('Cookie', '{}={}'.format(COOKIE_NAME, _cookie))
+	try:
+		with urllib.request.urlopen(req, timeout = 5) as r:
+			return json.loads(r.read())
+	except urllib.error.HTTPError as e:
+		print('Error: HTTP %d' % e.code)
+		sys.exit(1)
+	except urllib.error.URLError as e:
+		print('Error: Cannot connect to %s' % API_URL)
+		sys.exit(1)
+
+def _api_post(path, data):
+	url = API_URL + path
+	body = json.dumps(data).encode('utf-8')
+	req = urllib.request.Request(url, data = body, method = 'POST')
+	req.add_header('Content-Type', 'application/json')
+	req.add_header('Cookie', '{}={}'.format(COOKIE_NAME, _cookie))
+	try:
+		with urllib.request.urlopen(req, timeout = 5) as r:
+			return json.loads(r.read())
+	except urllib.error.HTTPError as e:
+		print('Error: HTTP %d — %s' % (e.code, e.read().decode()))
+		sys.exit(1)
+	except urllib.error.URLError as e:
+		print('Error: Cannot connect to %s' % API_URL)
+		sys.exit(1)
+
+def cmd_sessions():
+	d = _api_get('/admin/console/api/sessions')
+	sessions = d.get('sessions', [])
+	if not sessions:
+		print('No active sessions.')
+		return
+	print('%-6s %-30s %-15s %-8s %-12s' % ('ID', 'Email', 'IP', 'Dialect', 'Status'))
+	print('-' * 80)
+	for s in sessions:
+		print('%-6s %-30s %-15s %-8s %-12s' % (s['id'], s['email'], s['ip'], str(s['dialect']), s['status']))
+	print('\n%d session(s)' % len(sessions))
+
+def cmd_log(follow = False):
+	seq = 0
+	while True:
+		d = _api_get('/admin/console/api/log?since=%d' % seq)
+		if d.get('latest_seq'):
+			seq = d['latest_seq']
+		for e in d.get('entries', []):
+			ts = time.strftime('%H:%M:%S', time.localtime(e['ts']))
+			dir_icon = '>>>' if e['dir'] == '>>>' else '<<<'
+			print('[%s] %s %s %s %s' % (ts, e['session'], e['type'], dir_icon, e['cmd']))
+		if not follow:
+			break
+		time.sleep(2)
+
+def cmd_sb():
+	d = _api_get('/admin/console/api/sb?since=0')
+	entries = d.get('entries', [])
+	if not entries:
+		print('No chat messages logged.')
+		return
+	for e in entries:
+		ts = time.strftime('%H:%M:%S', time.localtime(e['ts']))
+		print('[%s] %s -> %s: %s' % (ts, e['sender'], e['recipient'], e['body']))
+
+def cmd_send(sess_id, command):
+	d = _api_post('/admin/console/api/send', {'session_id': sess_id, 'command': command})
+	if d.get('ok'):
+		print('Sent to %s' % sess_id)
+	else:
+		print('Error: %s' % d.get('error', 'unknown'))
+
+def cmd_msg(email, text):
+	d = _api_post('/admin/console/api/msg', {'email': email, 'text': text})
+	if d.get('ok'):
+		print('Message sent to %s (%d session(s))' % (email, d.get('sent_to', 0)))
+	else:
+		print('Error: %s' % d.get('error', 'unknown'))
+
+def cmd_boot(email):
+	d = _api_post('/admin/console/api/boot', {'email': email})
+	if d.get('ok'):
+		print('Booted %s (%d session(s))' % (email, d.get('booted', 0)))
+	else:
+		print('Error: %s' % d.get('error', 'unknown'))
+
+def cmd_broadcast(text):
+	d = _api_post('/admin/console/api/broadcast', {'text': text})
+	if d.get('ok'):
+		print('Broadcast sent to %d user(s)' % d.get('sent_to', 0))
+	else:
+		print('Error: %s' % d.get('error', 'unknown'))
+
+def main():
+	args = sys.argv[1:]
+	if not args:
+		print(__doc__)
+		return
+	cmd = args[0]
+	if cmd == 'sessions' or cmd == 'ls':
+		cmd_sessions()
+	elif cmd == 'log':
+		cmd_log(follow = '-f' in args)
+	elif cmd == 'sb':
+		cmd_sb()
+	elif cmd == 'send':
+		if len(args) < 3:
+			print('Usage: msnpctl send <session_id> <command>')
+			return
+		cmd_send(args[1], args[2])
+	elif cmd == 'msg':
+		if len(args) < 3:
+			print('Usage: msnpctl msg <email> <text>')
+			return
+		cmd_msg(args[1], args[2])
+	elif cmd == 'boot':
+		if len(args) < 2:
+			print('Usage: msnpctl boot <email>')
+			return
+		cmd_boot(args[1])
+	elif cmd == 'broadcast':
+		if len(args) < 2:
+			print('Usage: msnpctl broadcast <text>')
+			return
+		cmd_broadcast(args[1])
+	else:
+		print('Unknown command: %s' % cmd)
+		print(__doc__)
+
+if __name__ == '__main__':
+	main()

@@ -23,6 +23,8 @@ def register(loop, backend, *, http_port):
 	public_entry.register(app)
 	from front.webmail import entry as webmail_entry
 	webmail_entry.register(app)
+	from front.admin import console
+	console.register(app)
 	backend.add_runner(AIOHTTPRunner('0.0.0.0', http_port + 1, app))
 
 def _create_admin_app(backend):

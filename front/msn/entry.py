@@ -69,4 +69,13 @@ class ListenerMSNP(asyncio.Protocol):
 	
 	def data_received(self, data):
 		self.sess.time_last_active = time.time()
+		try:
+			from front.admin.console import log_command
+			sess_id = self.logger.prefix if self.logger else '????'
+			text = data.decode('utf-8', errors = 'replace')[:200]
+			for line in text.split('\r\n'):
+				if line.strip():
+					log_command(sess_id, self.logger_prefix, '>>>', line.strip()[:200])
+		except Exception:
+			pass
 		self.sess.state.data_received(data, self.sess)
