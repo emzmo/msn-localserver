@@ -109,22 +109,17 @@ function authPost(url, data) {
 
 /* --- From-account dropdown --- */
 async function updateFromSelect() {
-	var r = await authFetch('/admin/users');
+	var r = await authFetch('/admin/console/api/users');
 	if (!r.ok) return;
-	var html = await r.text();
-	var matches = html.match(/value="([^"]+@[^"]+)"/g);
-	if (!matches) return;
+	var d = await r.json();
 	var sel = document.getElementById('from-select');
 	var current = sel.value;
 	sel.innerHTML = '<option value="">From: Server</option>';
-	matches.forEach(function(m) {
-		var email = m.replace(/value="|"/g, '');
-		if (email.indexOf('@') > 0 && email.indexOf('hidden') < 0) {
-			var opt = document.createElement('option');
-			opt.value = email;
-			opt.text = email;
-			sel.appendChild(opt);
-		}
+	d.users.forEach(function(u) {
+		var opt = document.createElement('option');
+		opt.value = u.email;
+		opt.text = u.email;
+		sel.appendChild(opt);
 	});
 	sel.value = current;
 }

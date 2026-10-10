@@ -37,9 +37,11 @@ def log_sb_message(chat_id, sender, recipient, body):
 
 def register(app):
 	app.router.add_get('/admin/console', handle_console_page)
+	app.router.add_get('/admin/console-legacy', handle_console_legacy_page)
 	app.router.add_get('/admin/console/api/sessions', api_sessions)
 	app.router.add_get('/admin/console/api/log', api_log)
 	app.router.add_get('/admin/console/api/sb', api_sb)
+	app.router.add_get('/admin/console/api/users', api_users)
 	app.router.add_post('/admin/console/api/send', api_send)
 	app.router.add_post('/admin/console/api/msg', api_msg)
 	app.router.add_post('/admin/console/api/boot', api_boot)
@@ -60,6 +62,24 @@ async def handle_console_page(req):
 	with open(tmpl_path) as f:
 		html = f.read()
 	return web.Response(content_type = 'text/html', text = html)
+
+async def handle_console_legacy_page(req):
+	if not _check_auth(req):
+		return web.Response(status = 302, headers = {'Location': '/admin/login'})
+	import os
+	tmpl_path = os.path.join(os.path.dirname(__file__), 'tmpl', 'console-legacy.html')
+	with open(tmpl_path) as f:
+		html = f.read()
+	return web.Response(content_type = 'text/html', text = html)
+
+async def api_users(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	from db import Session as DBSession, User
+	with DBSession() as sess:
+		users = sess.query(User).order_by(User.email).all()
+		user_list = [{'email': u.email, 'name': u.name} for u in users]
+	return _json({'users': user_list})
 
 def _get_sessions(backend):
 	sessions = []
