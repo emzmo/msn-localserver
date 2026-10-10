@@ -8,12 +8,12 @@ body { font-family: "Courier New", monospace; margin: 0; background: #1a1a2e; co
 .header { background: #003366; color: #fff; padding: 6px 12px; font-family: Arial, sans-serif; }
 .header a { color: #99ccff; text-decoration: none; margin-right: 12px; }
 .stats { float: right; color: #999; font-size: 10px; }
-table.layout { width: 100%; height: expression(document.body.clientHeight - 60); border-collapse: collapse; }
-td.sessions-col { width: 350px; vertical-align: top; border-right: 2px solid #333; padding: 6px; }
+table.layout { width: 100%; border-collapse: collapse; }
+td.sessions-col { width: 350px; vertical-align: top; border-right: 2px solid #333; }
 td.log-col { vertical-align: top; padding: 0; }
-.sessions-box { height: 100%; overflow-y: auto; }
-.log-box { height: 65%; overflow-y: auto; padding: 6px; }
-.sb-box { height: 25%; overflow-y: auto; padding: 6px; border-top: 2px solid #333; color: #ff9966; }
+.sessions-box { height: 500px; overflow-y: auto; padding: 6px; }
+.log-box { height: 350px; overflow-y: auto; padding: 6px; }
+.sb-box { height: 120px; overflow-y: auto; padding: 6px; border-top: 2px solid #333; color: #ff9966; }
 .input-bar { background: #0d1117; padding: 6px; border-top: 2px solid #333; }
 input, select, button { font-family: "Courier New", monospace; font-size: 12px; background: #0d1117; color: #0f0; border: 1px solid #333; padding: 3px 6px; }
 button { cursor: pointer; background: #1a3a5c; }
@@ -29,7 +29,6 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 .log-info { color: #ff9966; }
 .sb-entry { padding: 1px 0; }
 .label { color: #99ccff; font-weight: bold; }
-.gap { margin-right: 4px; }
 </style>
 </head>
 <body>
@@ -42,7 +41,7 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 <td class="sessions-col">
 <div class="sessions-box">
 <div class="label">Sessions</div>
-<table class="data" id="sessions-table">
+<table class="data">
 <thead><tr><th>ID</th><th>Email</th><th>Client</th><th></th></tr></thead>
 <tbody id="sessions"></tbody>
 </table>
@@ -55,12 +54,12 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 </div>
 <div class="input-bar">
 <select id="sess-select"><option value="">Session...</option></select>
-<input type="text" id="cmd-input" placeholder="Raw command..." style="width:200px">
+<input type="text" id="cmd-input" style="width:200px">
 <button onclick="sendCmd()">Send</button>
 &nbsp;
 <select id="from-select"><option value="">From: Server</option></select>
-<input type="text" id="msg-email" placeholder="To: user@hotmail.com" style="width:160px">
-<input type="text" id="msg-text" placeholder="Message..." style="width:200px">
+<input type="text" id="msg-email" style="width:160px">
+<input type="text" id="msg-text" style="width:200px">
 <button onclick="sendMsg()">MSG</button>
 <button onclick="broadcast()" class="btn-danger">Broadcast</button>
 </div>
@@ -69,7 +68,6 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 
 <script>
 var logSeq = 0, sbSeq = 0;
-var ie = document.all && !window.XMLHttpRequest ? true : false;
 
 function XHR() {
 	if (window.XMLHttpRequest) return new XMLHttpRequest();
@@ -83,7 +81,7 @@ function apiGet(url, cb) {
 		if (x.readyState == 4 && x.status == 200) {
 			var d;
 			try { d = JSON.parse(x.responseText); }
-			catch(e) { d = eval("(" + x.responseText + ")"); }
+			catch(e) { try { d = eval("(" + x.responseText + ")"); } catch(e2) { return; } }
 			cb(d);
 		}
 	};
@@ -98,7 +96,7 @@ function apiPost(url, data, cb) {
 		if (x.readyState == 4) {
 			var d;
 			try { d = JSON.parse(x.responseText); }
-			catch(e) { d = eval("(" + x.responseText + ")"); }
+			catch(e) { try { d = eval("(" + x.responseText + ")"); } catch(e2) { d = {}; } }
 			cb(d, x.status);
 		}
 	};
@@ -107,21 +105,66 @@ function apiPost(url, data, cb) {
 
 function esc(s) {
 	var d = document.createElement("div");
-	d.innerHTML = s;
-	return d.innerText || d.textContent || s;
+	d.appendChild(document.createTextNode(s));
+	return d.innerHTML;
+}
+
+function clearNode(el) {
+	while (el.firstChild) el.removeChild(el.firstChild);
+}
+
+function makeButton(label, cls, onclick) {
+	var btn = document.createElement("button");
+	if (cls) btn.className = cls;
+	btn.appendChild(document.createTextNode(label));
+	if (btn.attachEvent) {
+		btn.attachEvent("onclick", onclick);
+	} else {
+		btn.setAttribute("onclick", onclick);
+	}
+	return btn;
+}
+
+function addSessionRow(tbody, s) {
+	var tr = document.createElement("tr");
+
+	var td1 = document.createElement("td");
+	td1.appendChild(document.createTextNode(s.id));
+	tr.appendChild(td1);
+
+	var td2 = document.createElement("td");
+	td2.appendChild(document.createTextNode(s.email));
+	tr.appendChild(td2);
+
+	var td3 = document.createElement("td");
+	td3.appendChild(document.createTextNode(s.client));
+	tr.appendChild(td3);
+
+	var td4 = document.createElement("td");
+	var btn = document.createElement("button");
+	btn.className = "btn-danger btn-small";
+	btn.appendChild(document.createTextNode("Boot"));
+	if (btn.attachEvent) {
+		btn.attachEvent("onclick", function() { bootUser(s.email); });
+	} else {
+		btn.onclick = function() { bootUser(s.email); };
+	}
+	td4.appendChild(btn);
+	tr.appendChild(td4);
+
+	tbody.appendChild(tr);
 }
 
 function updateSessions() {
 	apiGet("/admin/console/api/sessions", function(d) {
 		var tbody = document.getElementById("sessions");
 		var sel = document.getElementById("sess-select");
-		tbody.innerHTML = "";
-		sel.innerHTML = '<option value="">Session...</option>';
+		clearNode(tbody);
+		sel.options.length = 1;
 		var sessions = d.sessions || [];
 		for (var i = 0; i < sessions.length; i++) {
 			var s = sessions[i];
-			tbody.innerHTML += '<tr><td>' + s.id + '</td><td>' + s.email + '</td><td>' + s.client + '</td>' +
-				'<td><button class="btn-danger btn-small" onclick="bootUser(\'' + s.email + '\')">Boot</button></td></tr>';
+			addSessionRow(tbody, s);
 			sel.options[sel.options.length] = new Option(s.id + " " + s.email, s.id);
 		}
 		document.getElementById("stats").innerHTML = sessions.length + " sessions";
@@ -133,13 +176,17 @@ function updateLog() {
 		if (d.latest_seq) logSeq = d.latest_seq;
 		var area = document.getElementById("log");
 		var entries = d.entries || [];
+		var html = "";
 		for (var i = 0; i < entries.length; i++) {
 			var e = entries[i];
 			var cls = e.dir == ">>>" ? "log-in" : (e.dir == "<<<" ? "log-out" : "log-info");
 			var ts = new Date(e.ts * 1000).toLocaleTimeString();
-			area.innerHTML += '<div class="log-entry ' + cls + '">[' + ts + '] ' + e.session + ' ' + e.dir + ' ' + esc(e.cmd) + '</div>';
+			html += '<div class="log-entry ' + cls + '">[' + ts + '] ' + esc(e.session) + ' ' + e.dir + ' ' + esc(e.cmd) + '<\/div>';
 		}
-		if (entries.length > 0) area.scrollTop = area.scrollHeight;
+		if (html) {
+			area.innerHTML = area.innerHTML + html;
+			area.scrollTop = area.scrollHeight;
+		}
 	});
 }
 
@@ -148,19 +195,23 @@ function updateSB() {
 		if (d.latest_seq) sbSeq = d.latest_seq;
 		var area = document.getElementById("sb-log");
 		var entries = d.entries || [];
+		var html = "";
 		for (var i = 0; i < entries.length; i++) {
 			var e = entries[i];
 			var ts = new Date(e.ts * 1000).toLocaleTimeString();
-			area.innerHTML += '<div class="sb-entry">[' + ts + '] ' + e.sender + ' -> ' + e.recipient + ': ' + esc(e.body) + '</div>';
+			html += '<div class="sb-entry">[' + ts + '] ' + esc(e.sender) + ' -> ' + esc(e.recipient) + ': ' + esc(e.body) + '<\/div>';
 		}
-		if (entries.length > 0) area.scrollTop = area.scrollHeight;
+		if (html) {
+			area.innerHTML = area.innerHTML + html;
+			area.scrollTop = area.scrollHeight;
+		}
 	});
 }
 
 function updateFromSelect() {
 	apiGet("/admin/console/api/users", function(d) {
 		var sel = document.getElementById("from-select");
-		sel.innerHTML = '<option value="">From: Server</option>';
+		sel.options.length = 1;
 		var users = d.users || [];
 		for (var i = 0; i < users.length; i++) {
 			sel.options[sel.options.length] = new Option(users[i].email, users[i].email);
