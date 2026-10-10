@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}MSN Hotmail - Sent{% endblock %}
+{% block content %}
+<div class="hm-pagehead">Sent <span style="float:right; font-weight:normal; color:#666666; font-size:11px;">
+	{{ total_count }} message(s)
+</span></div>
+
+<div style="margin-bottom: 8px;">
+	<a href="/webmail/compose" class="hm-btn">Compose Message</a>
+	<a href="/webmail/sent" class="hm-btn hm-btn-sec">Refresh</a>
+</div>
+
+{% if messages %}
+<table class="hm-table">
+	<tr>
+		<th style="width: 180px;">To</th>
+		<th>Subject</th>
+		<th style="width: 140px;">Date</th>
+	</tr>
+	{% for m in messages %}
+	<tr class="read">
+		<td>{{ m.recipient }}</td>
+		<td><a href="/webmail/read/{{ m.id }}">{{ m.subject }}</a></td>
+		<td>{{ m.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% else %}
+<div class="hm-empty">No sent messages.</div>
+{% endif %}
+{% endblock %}

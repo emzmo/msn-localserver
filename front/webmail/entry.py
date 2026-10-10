@@ -29,6 +29,7 @@ def register(app):
 	app.router.add_post('/webmail/login', handle_login_post)
 	app.router.add_get('/webmail/logout', handle_logout)
 	app.router.add_get('/webmail/inbox', handle_inbox)
+	app.router.add_get('/webmail/sent', handle_sent)
 	app.router.add_get('/webmail/read/{id:\\d+}', handle_read)
 	app.router.add_get('/webmail/compose', handle_compose_form)
 	app.router.add_post('/webmail/compose', handle_compose_post)
@@ -124,6 +125,26 @@ async def handle_inbox(req):
 		'total_count': len(msg_list),
 	})
 
+async def handle_sent(req):
+	email = _check_auth(req)
+	if email is None:
+		return _redirect('/webmail/login')
+	with DBSession() as sess:
+		messages = sess.query(MailMessage).filter(
+			MailMessage.sender_email == email
+		).order_by(MailMessage.timestamp.desc()).all()
+		msg_list = [{
+			'id': m.id,
+			'recipient': m.recipient_email,
+			'subject': m.subject or '(no subject)',
+			'timestamp': m.timestamp,
+		} for m in messages]
+	return _render(req, 'sent.html', {
+		'email': email,
+		'messages': msg_list,
+		'total_count': len(msg_list),
+	})
+
 async def handle_read(req):
 	email = _check_auth(req)
 	if email is None:
@@ -132,7 +153,7 @@ async def handle_read(req):
 	with DBSession() as sess:
 		msg = sess.query(MailMessage).filter(
 			MailMessage.id == msg_id,
-			MailMessage.recipient_email == email,
+			(MailMessage.recipient_email == email) | (MailMessage.sender_email == email),
 		).one_or_none()
 		if msg is None:
 			return _render(req, 'read.html', {
@@ -186,4 +207,4 @@ async def handle_compose_post(req):
 			timestamp = datetime.utcnow(),
 			is_read = False,
 		))
-	return _redirect('/webmail/inbox')
+	return _redirect('/webmail/sent')
