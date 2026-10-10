@@ -123,6 +123,7 @@ async def api_msg(req):
 	data = json.loads(await req.text())
 	email = data.get('email', '')
 	text = data.get('text', '')
+	from_email = data.get('from_email', '')
 	backend = req.app['backend']
 	from core.user import UserService
 	svc = UserService()
@@ -135,6 +136,17 @@ async def api_msg(req):
 	sessions = backend._sc.get_sessions_by_user(u)
 	if not sessions:
 		return _json({'error': 'user not online'}, 400)
+	if from_email:
+		from_user = backend._user_by_uuid.get(svc.get_uuid(from_email))
+		if from_user:
+			from_name = from_user.status.name or from_email
+		else:
+			from_name = from_email
+		msg_from = from_email
+		msg_name = from_name
+	else:
+		msg_from = 'Server'
+		msg_name = 'Server'
 	payload = (
 		'MIME-Version: 1.0\r\n'
 		'Content-Type: text/plain; charset=UTF-8\r\n'
@@ -142,8 +154,8 @@ async def api_msg(req):
 		'{}\r\n'
 	).format(text).encode('utf-8')
 	for s in sessions:
-		s.send_reply('MSG', 'Server', 'Server', payload)
-	return _json({'ok': True, 'sent_to': len(sessions)})
+		s.send_reply('MSG', msg_from, msg_name, payload)
+	return _json({'ok': True, 'sent_to': len(sessions), 'from': msg_from})
 
 async def api_boot(req):
 	if not _check_auth(req):
