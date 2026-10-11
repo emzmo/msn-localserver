@@ -46,6 +46,8 @@ def register(app):
 	app.router.add_post('/admin/console/api/msg', api_msg)
 	app.router.add_post('/admin/console/api/boot', api_boot)
 	app.router.add_post('/admin/console/api/broadcast', api_broadcast)
+	app.router.add_get('/admin/console/api/stats', api_stats)
+	app.router.add_post('/admin/console/api/debug', api_debug)
 
 def _check_auth(req):
 	from front.admin.entry import _check_auth as admin_auth
@@ -224,3 +226,34 @@ async def api_broadcast(req):
 		except Exception:
 			pass
 	return _json({'ok': True, 'sent_to': count})
+
+async def api_stats(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	backend = req.app['backend']
+	sess_count = sum(1 for s in backend._sc.iter_sessions() if s.user is not None)
+	chat_count = len(backend._chats)
+	mem_mb = 0
+	try:
+		with open('/proc/meminfo') as f:
+			for line in f:
+				if line.startswith('MemAvailable:'):
+					mem_mb = int(line.split()[1]) // 1024
+					break
+	except Exception:
+		pass
+	return _json({
+		'sessions': sess_count,
+		'chats': chat_count,
+		'mem_mb': mem_mb,
+		'debug': getattr(settings, 'DEBUG_MSNP', False),
+	})
+
+async def api_debug(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	data = json.loads(await req.text())
+	enabled = data.get('enabled', False)
+	settings.DEBUG_MSNP = bool(enabled)
+	settings.DEBUG = bool(enabled)
+	return _json({'ok': True, 'debug': bool(enabled)})

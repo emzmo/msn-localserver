@@ -39,6 +39,7 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 <body>
 <div class="header">
 <a href="/admin">Admin</a> | <a href="/admin/console">Console</a> | <a href="/admin/console-legacy">Legacy</a>
+<label style="color:#99ccff;font-size:10px;cursor:pointer"><input type="checkbox" id="debug-toggle" onclick="toggleDebug()" style="vertical-align:middle"> Debug</label>
 <span class="toggle-sessions" onclick="toggleSessions()" id="toggle-btn">&#9776; Sessions</span>
 <span style="float:right" id="stats"></span>
 </div>
@@ -145,6 +146,19 @@ async function updateSessions() {
 	});
 	document.getElementById('stats').textContent = d.sessions.length + ' sessions';
 }
+async function updateStats() {
+	var r = await authFetch('/admin/console/api/stats');
+	if (!r.ok) return;
+	var d = await r.json();
+	document.getElementById('stats').textContent =
+		d.sessions + ' sessions | ' + d.chats + ' chats | ' + d.mem_mb + ' MB';
+	var dbg = document.getElementById('debug-toggle');
+	if (dbg) dbg.checked = d.debug;
+}
+async function toggleDebug() {
+	var dbg = document.getElementById('debug-toggle');
+	await authPost('/admin/console/api/debug', {enabled: dbg.checked});
+}
 async function updateLog() {
 	var r = await authFetch('/admin/console/api/log?since=' + logSeq);
 	if (!r.ok) return;
@@ -211,9 +225,11 @@ async function bootUser(email) {
 setInterval(updateSessions, 2000);
 setInterval(updateLog, 2000);
 setInterval(updateSB, 2000);
+setInterval(updateStats, 5000);
 updateSessions();
 updateLog();
 updateSB();
+updateStats();
 updateFromSelect();
 setInterval(updateFromSelect, 30000);
 </script>

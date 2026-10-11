@@ -34,6 +34,7 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 <body>
 <div class="header">
 <a href="/admin">Admin</a> | <a href="/admin/console">Console</a> | <a href="/admin/console-legacy">Legacy</a>
+<label style="color:#99ccff;font-size:10px;cursor:pointer"><input type="checkbox" id="debug-toggle" onclick="toggleDebug()"> Debug</label>
 <span class="stats" id="stats"></span>
 </div>
 
@@ -171,6 +172,20 @@ function updateSessions() {
 	});
 }
 
+function updateStats() {
+	apiGet("/admin/console/api/stats", function(d) {
+		document.getElementById("stats").innerHTML =
+			d.sessions + " sessions | " + d.chats + " chats | " + d.mem_mb + " MB";
+		var dbg = document.getElementById("debug-toggle");
+		if (dbg) dbg.checked = d.debug;
+	});
+}
+
+function toggleDebug() {
+	var dbg = document.getElementById("debug-toggle");
+	apiPost("/admin/console/api/debug", {enabled: dbg.checked}, function() {});
+}
+
 function updateLog() {
 	apiGet("/admin/console/api/log?since=" + logSeq, function(d) {
 		if (d.latest_seq) logSeq = d.latest_seq;
@@ -257,8 +272,10 @@ function poll() {
 }
 
 poll();
+updateStats();
 updateFromSelect();
 setInterval(poll, 2000);
+setInterval(updateStats, 5000);
 setInterval(updateFromSelect, 30000);
 </script>
 </body>
