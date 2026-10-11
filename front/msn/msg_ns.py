@@ -132,6 +132,15 @@ def _util_usr_final(sess, trid, token):
 	
 	sess.send_reply('USR', trid, 'OK', user.email, *args)
 	
+	if settings.WELCOME_MSG:
+		welcome_payload = (
+			'MIME-Version: 1.0\r\n'
+			'Content-Type: text/plain; charset=UTF-8\r\n'
+			'\r\n'
+			'{}\r\n'
+		).format(settings.WELCOME_MSG).encode('utf-8')
+		sess.send_reply('MSG', 'Server', 'Server', welcome_payload)
+	
 	if dialect < 13:
 		return
 	
