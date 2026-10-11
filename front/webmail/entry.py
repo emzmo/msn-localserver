@@ -207,4 +207,45 @@ async def handle_compose_post(req):
 			timestamp = datetime.utcnow(),
 			is_read = False,
 		))
+	_try_notify_mail(req, to)
 	return _redirect('/webmail/sent')
+
+def _try_notify_mail(req, recipient_email):
+	try:
+		backend = req.app.get('backend')
+		if backend is None:
+			return
+		from core.user import UserService
+		svc = UserService()
+		user_uuid = svc.get_uuid(recipient_email)
+		if user_uuid is None:
+			return
+		user = backend._user_by_uuid.get(user_uuid)
+		if user is None:
+			return
+		sessions = backend._sc.get_sessions_by_user(user)
+		if not sessions:
+			return
+		from db import Session as DBSession, MailMessage
+		with DBSession() as dbsess:
+			unread = dbsess.query(MailMessage).filter(
+				MailMessage.recipient_email == recipient_email,
+				MailMessage.is_read == False,
+			).count()
+		notify_payload = (
+			'MIME-Version: 1.0\r\n'
+			'Content-Type: text/x-msmsgsinitialmdatanotification; charset=UTF-8\r\n'
+			'\r\n'
+			'Mail-Data: <MD><E><I>{}</I><IU>{}</IU><O>0</O><OU>0</OU></E><Q><QTM>409600</QTM><QNM>204800</QNM></Q></MD>\r\n'
+			'Inbox-URL: {}\r\n'
+			'Folders-URL: {}\r\n'
+			'Post-URL: {}\r\n'
+		).format(unread, unread,
+			settings.WEBMAIL_URL + 'inbox',
+			settings.WEBMAIL_URL,
+			settings.WEBMAIL_URL,
+		).encode('utf-8')
+		for s in sessions:
+			s.send_reply('MSG', 'Hotmail', 'Hotmail', notify_payload)
+	except Exception:
+		pass
