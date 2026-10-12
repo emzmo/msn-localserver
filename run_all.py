@@ -10,9 +10,6 @@ def main(*, devmode = False):
 	
 	db.Base.metadata.create_all(db.engine)
 	
-	from front.msn.msg_ns import _ensure_robat_exists
-	_ensure_robat_exists()
-	
 	if devmode:
 		http_port = 80
 	else:
@@ -21,6 +18,11 @@ def main(*, devmode = False):
 	loop = asyncio.new_event_loop()
 	asyncio.set_event_loop(loop)
 	backend = Backend(loop)
+	from core.robat import RobatService
+	robat = RobatService(backend)
+	robat.ensure_user_exists()
+	robat.login()
+	backend.robat = robat
 	if settings.ENABLE_FRONT_MSN:
 		front.msn.register(loop, backend, http_port = http_port, devmode = devmode)
 	if settings.ENABLE_FRONT_YMSG:

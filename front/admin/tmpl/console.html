@@ -34,6 +34,9 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 .label { color: #99ccff; font-weight: bold; }
 .stats { color: #666; font-size: 10px; padding: 4px 0; }
 .divider { width: 1px; height: 20px; background: #333; margin: 0 4px; }
+.tab-btn { background: #0d1117; color: #666; border: 1px solid #333; padding: 4px 16px; cursor: pointer; font-size: 12px; font-family: monospace; }
+.tab-btn:hover { color: #99ccff; }
+.tab-btn-active { background: #1a3a5c; color: #fff; border: 1px solid #336699; padding: 4px 16px; cursor: pointer; font-size: 12px; font-family: monospace; }
 </style>
 </head>
 <body>
@@ -44,7 +47,11 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 <span class="toggle-sessions" onclick="toggleSessions()" id="toggle-btn">&#9776; Sessions</span>
 <span style="float:right" id="stats"></span>
 </div>
-<div class="container">
+<div style="background:#0d1117;padding:4px 12px;border-bottom:1px solid #333">
+<button onclick="showView('console')" id="btn-console" class="tab-btn-active">Console</button>
+<button onclick="showView('robat')" id="btn-robat" class="tab-btn">Robat</button>
+</div>
+<div id="view-console" class="container">
 <div class="left-panel" id="left-panel">
 <div class="label">Sessions</div>
 <table id="sessions-table">
@@ -71,6 +78,58 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 </div>
 </div>
 </div>
+
+<div id="view-robat" style="display:none;padding:12px">
+<div style="display:flex;gap:20px">
+<div style="flex:1">
+<div class="label">Robat Session</div>
+<div id="robat-status" style="margin:8px 0;color:#0f0;font-size:14px">Checking...</div>
+<div style="margin:8px 0">
+<button onclick="robatLogin()">Login</button>
+<button onclick="robatLogout()" class="btn-danger">Logout</button>
+<button onclick="robatReload()">Reload</button>
+</div>
+<hr style="border-color:#333;margin:12px 0">
+<div class="label">Send Manual Message</div>
+<div style="margin:8px 0">
+<select id="robat-to"><option value="">To: select user...</option></select>
+<input type="text" id="robat-msg" placeholder="Message..." style="width:300px" onkeypress="if(event.key==='Enter')robatSend()">
+<button onclick="robatSend()">Send</button>
+</div>
+<div style="margin:8px 0">
+<input type="text" id="robat-bcast" placeholder="Broadcast message..." style="width:300px" onkeypress="if(event.key==='Enter')robatBroadcast()">
+<button onclick="robatBroadcast()" class="btn-danger">Broadcast</button>
+</div>
+</div>
+<div style="flex:1">
+<div class="label">Automated Reply Sequence</div>
+<p style="font-size:10px;color:#666">When a user messages Robat, replies are sent in order. After the last one, it loops back to step 1.</p>
+<table class="data" id="robat-replies-table">
+<thead><tr><th>Step</th><th>English</th><th>Gaeilge</th><th></th></tr></thead>
+<tbody id="robat-replies"></tbody>
+</table>
+<div style="margin:8px 0">
+<input type="text" id="reply-en" placeholder="English reply..." style="width:200px">
+<input type="text" id="reply-ga" placeholder="Gaeilge reply..." style="width:200px">
+<button onclick="addReply()">Add</button>
+</div>
+<hr style="border-color:#333;margin:12px 0">
+<div class="label">Cron Messages</div>
+<p style="font-size:10px;color:#666">Scheduled messages sent to all online users at intervals.</p>
+<table class="data" id="robat-crons-table">
+<thead><tr><th>EN</th><th>GA</th><th>Every (min)</th><th>On</th><th></th></tr></thead>
+<tbody id="robat-crons"></tbody>
+</table>
+<div style="margin:8px 0">
+<input type="text" id="cron-en" placeholder="English msg..." style="width:180px">
+<input type="text" id="cron-ga" placeholder="Gaeilge msg..." style="width:180px">
+<input type="number" id="cron-interval" placeholder="min" style="width:60px" value="30">
+<button onclick="addCron()">Add</button>
+</div>
+</div>
+</div>
+</div>
+
 <script>
 var logSeq = 0, sbSeq = 0;
 
@@ -239,6 +298,102 @@ updateSB();
 updateStats();
 updateFromSelect();
 setInterval(updateFromSelect, 30000);
+
+/* --- View switching --- */
+function showView(view) {
+	document.getElementById('view-console').style.display = view == 'console' ? 'flex' : 'none';
+	document.getElementById('view-robat').style.display = view == 'robat' ? 'block' : 'none';
+	document.getElementById('btn-console').className = view == 'console' ? 'tab-btn-active' : 'tab-btn';
+	document.getElementById('btn-robat').className = view == 'robat' ? 'tab-btn-active' : 'tab-btn';
+	if (view == 'robat') { updateRobat(); updateReplies(); updateCrons(); }
+}
+
+/* --- Robat management --- */
+async function updateRobat() {
+	var r = await authFetch('/admin/console/api/robat/status');
+	if (!r.ok) return;
+	var d = await r.json();
+	var el = document.getElementById('robat-status');
+	el.textContent = d.online ? '● Online' : '● Offline';
+	el.style.color = d.online ? '#0f0' : '#f00';
+	var sel = document.getElementById('robat-to');
+	var sess = await (await authFetch('/admin/console/api/sessions')).json();
+	sel.innerHTML = '<option value="">To: select user...</option>';
+	(sess.sessions || []).forEach(function(s) {
+		if (s.email != 'robat@hotmail.com')
+			sel.options[sel.options.length] = new Option(s.email, s.email);
+	});
+}
+async function robatLogin() { await authPost('/admin/console/api/robat/login', {}); updateRobat(); }
+async function robatLogout() { await authPost('/admin/console/api/robat/logout', {}); updateRobat(); }
+async function robatReload() { await authPost('/admin/console/api/robat/reload', {}); updateRobat(); }
+async function robatSend() {
+	var to = document.getElementById('robat-to').value;
+	var msg = document.getElementById('robat-msg').value;
+	if (!to || !msg) return;
+	await authPost('/admin/console/api/robat/msg', {to: to, text: msg});
+	document.getElementById('robat-msg').value = '';
+}
+async function robatBroadcast() {
+	var msg = document.getElementById('robat-bcast').value;
+	if (!msg) return;
+	await authPost('/admin/console/api/robat/broadcast', {text: msg});
+	document.getElementById('robat-bcast').value = '';
+}
+async function updateReplies() {
+	var r = await authFetch('/admin/console/api/robat/replies');
+	if (!r.ok) return;
+	var d = await r.json();
+	var tbody = document.getElementById('robat-replies');
+	tbody.innerHTML = '';
+	(d.replies || []).forEach(function(r) {
+		tbody.innerHTML += '<tr><td>' + r.step + '</td><td>' + r.en + '</td><td>' + r.ga + '</td>' +
+			'<td><button class="btn-danger btn-small" onclick="delReply(' + r.id + ')">Del</button></td></tr>';
+	});
+}
+async function addReply() {
+	var en = document.getElementById('reply-en').value;
+	var ga = document.getElementById('reply-ga').value;
+	if (!en && !ga) return;
+	await authPost('/admin/console/api/robat/replies/add', {en: en, ga: ga});
+	document.getElementById('reply-en').value = '';
+	document.getElementById('reply-ga').value = '';
+	updateReplies();
+}
+async function delReply(id) {
+	await authPost('/admin/console/api/robat/replies/delete', {id: id});
+	updateReplies();
+}
+async function updateCrons() {
+	var r = await authFetch('/admin/console/api/robat/crons');
+	if (!r.ok) return;
+	var d = await r.json();
+	var tbody = document.getElementById('robat-crons');
+	tbody.innerHTML = '';
+	(d.crons || []).forEach(function(c) {
+		var chk = c.enabled ? 'checked' : '';
+		tbody.innerHTML += '<tr><td>' + c.en + '</td><td>' + c.ga + '</td><td>' + c.interval + '</td>' +
+			'<td><input type="checkbox" ' + chk + ' onchange="toggleCron(' + c.id + ', this.checked)"></td>' +
+			'<td><button class="btn-danger btn-small" onclick="delCron(' + c.id + ')">Del</button></td></tr>';
+	});
+}
+async function addCron() {
+	var en = document.getElementById('cron-en').value;
+	var ga = document.getElementById('cron-ga').value;
+	var interval = document.getElementById('cron-interval').value;
+	if (!en && !ga) return;
+	await authPost('/admin/console/api/robat/crons/add', {en: en, ga: ga, interval: parseInt(interval)});
+	document.getElementById('cron-en').value = '';
+	document.getElementById('cron-ga').value = '';
+	updateCrons();
+}
+async function delCron(id) {
+	await authPost('/admin/console/api/robat/crons/delete', {id: id});
+	updateCrons();
+}
+async function toggleCron(id, enabled) {
+	await authPost('/admin/console/api/robat/crons/toggle', {id: id, enabled: enabled});
+}
 </script>
 </body>
 </html>

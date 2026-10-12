@@ -49,6 +49,19 @@ def register(app):
 	app.router.add_get('/admin/console/api/stats', api_stats)
 	app.router.add_post('/admin/console/api/debug', api_debug)
 	app.router.add_post('/admin/console/api/welcome', api_welcome)
+	app.router.add_get('/admin/console/api/robat/status', api_robat_status)
+	app.router.add_post('/admin/console/api/robat/login', api_robat_login)
+	app.router.add_post('/admin/console/api/robat/logout', api_robat_logout)
+	app.router.add_post('/admin/console/api/robat/reload', api_robat_reload)
+	app.router.add_post('/admin/console/api/robat/msg', api_robat_msg)
+	app.router.add_post('/admin/console/api/robat/broadcast', api_robat_broadcast)
+	app.router.add_get('/admin/console/api/robat/replies', api_robat_replies)
+	app.router.add_post('/admin/console/api/robat/replies/add', api_robat_reply_add)
+	app.router.add_post('/admin/console/api/robat/replies/delete', api_robat_reply_delete)
+	app.router.add_get('/admin/console/api/robat/crons', api_robat_crons)
+	app.router.add_post('/admin/console/api/robat/crons/add', api_robat_cron_add)
+	app.router.add_post('/admin/console/api/robat/crons/delete', api_robat_cron_delete)
+	app.router.add_post('/admin/console/api/robat/crons/toggle', api_robat_cron_toggle)
 
 def _check_auth(req):
 	from front.admin.entry import _check_auth as admin_auth
@@ -267,3 +280,120 @@ async def api_welcome(req):
 	enabled = data.get('enabled', False)
 	settings.WELCOME_ENABLED = bool(enabled)
 	return _json({'ok': True, 'welcome_enabled': bool(enabled)})
+
+def _get_robat(req):
+	backend = req.app['backend']
+	return getattr(backend, 'robat', None)
+
+async def api_robat_status(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	r = _get_robat(req)
+	if r is None:
+		return _json({'online': False})
+	return _json({'online': r.online})
+
+async def api_robat_login(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	r = _get_robat(req)
+	if r:
+		r.login()
+	return _json({'ok': True, 'online': r.online if r else False})
+
+async def api_robat_logout(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	r = _get_robat(req)
+	if r:
+		r.logout()
+	return _json({'ok': True, 'online': False})
+
+async def api_robat_reload(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	r = _get_robat(req)
+	if r:
+		r.reload()
+	return _json({'ok': True, 'online': r.online if r else False})
+
+async def api_robat_msg(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	data = json.loads(await req.text())
+	r = _get_robat(req)
+	if r is None or not r.online:
+		return _json({'error': 'robat offline'}, 400)
+	ok = r.send_manual_msg(data.get('to', ''), data.get('text', ''))
+	return _json({'ok': ok})
+
+async def api_robat_broadcast(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	data = json.loads(await req.text())
+	r = _get_robat(req)
+	if r is None or not r.online:
+		return _json({'error': 'robat offline'}, 400)
+	count = r.broadcast(data.get('text', ''))
+	return _json({'ok': True, 'sent_to': count})
+
+async def api_robat_replies(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	r = _get_robat(req)
+	if r is None:
+		return _json({'replies': []})
+	return _json({'replies': r.get_replies()})
+
+async def api_robat_reply_add(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	data = json.loads(await req.text())
+	r = _get_robat(req)
+	if r:
+		r.add_reply(data.get('en', ''), data.get('ga', ''))
+	return _json({'ok': True})
+
+async def api_robat_reply_delete(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	data = json.loads(await req.text())
+	r = _get_robat(req)
+	if r:
+		r.delete_reply(int(data.get('id', 0)))
+	return _json({'ok': True})
+
+async def api_robat_crons(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	r = _get_robat(req)
+	if r is None:
+		return _json({'crons': []})
+	return _json({'crons': r.get_crons()})
+
+async def api_robat_cron_add(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	data = json.loads(await req.text())
+	r = _get_robat(req)
+	if r:
+		r.add_cron(data.get('en', ''), data.get('ga', ''), int(data.get('interval', 0)), data.get('at_time'))
+	return _json({'ok': True})
+
+async def api_robat_cron_delete(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	data = json.loads(await req.text())
+	r = _get_robat(req)
+	if r:
+		r.delete_cron(int(data.get('id', 0)))
+	return _json({'ok': True})
+
+async def api_robat_cron_toggle(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	data = json.loads(await req.text())
+	r = _get_robat(req)
+	if r:
+		r.toggle_cron(int(data.get('id', 0)), bool(data.get('enabled', False)))
+	return _json({'ok': True})

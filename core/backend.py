@@ -33,6 +33,7 @@ class Backend:
 		self._chats = {}
 		
 		self._runners = []
+		self.robat = None
 		
 		loop.create_task(self._sync_db())
 		loop.create_task(self._clean_sessions())
@@ -352,6 +353,16 @@ class Backend:
 		if caller.detail is None: raise error.ServerError()
 		callee_uuid = self._user_service.get_uuid(callee_email)
 		if callee_uuid is None: raise error.UserDoesNotExist()
+		if callee_email == 'robat@hotmail.com' and self.robat and self.robat.online:
+			chat = self._chats.get(chatid)
+			if chat:
+				from core.session import RobatSession
+				rs = RobatSession(self.robat.session.state, self.robat)
+				rs.user = self.robat.user
+				rs.client = self.robat.session.client
+				rs._chat = chat
+				chat.add_session(rs)
+			return
 		ctc = caller.detail.contacts.get(callee_uuid)
 		if ctc is None:
 			if callee_uuid != caller_uuid:

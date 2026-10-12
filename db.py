@@ -63,6 +63,24 @@ class MailMessage(Base):
 	timestamp = sa.Column(sa.DateTime, default = datetime.utcnow)
 	is_read = sa.Column(sa.Boolean, default = False)
 
+class RobatReply(Base):
+	__tablename__ = 't_robat_reply'
+	
+	id = sa.Column(sa.Integer, primary_key = True)
+	step_order = sa.Column(sa.Integer, nullable = False)
+	reply_en = sa.Column(sa.Text, nullable = False)
+	reply_ga = sa.Column(sa.Text, nullable = False)
+
+class RobatCron(Base):
+	__tablename__ = 't_robat_cron'
+	
+	id = sa.Column(sa.Integer, primary_key = True)
+	msg_en = sa.Column(sa.Text, nullable = False)
+	msg_ga = sa.Column(sa.Text, nullable = False)
+	interval_min = sa.Column(sa.Integer, nullable = False, default = 0)
+	at_time = sa.Column(sa.String, nullable = True)
+	enabled = sa.Column(sa.Boolean, default = True)
+
 
 engine = sa.create_engine(settings.DB)
 session_factory = sessionmaker(bind = engine)

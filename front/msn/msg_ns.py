@@ -566,29 +566,6 @@ def _get_unread_mail_count(email):
 	except Exception:
 		return 0
 
-ROBAT_EMAIL = 'robat@hotmail.com'
-ROBAT_NAME = 'Robat'
-ROBAT_PASSWORD = 'pasfhocal'
-
-def _ensure_robat_exists():
-	try:
-		from db import Session as DBSession, User
-		from util.misc import gen_uuid
-		from util import hash
-		with DBSession() as sess:
-			existing = sess.query(User).filter(User.email == ROBAT_EMAIL).one_or_none()
-			if existing is None:
-				user = User(
-					uuid = gen_uuid(), email = ROBAT_EMAIL, verified = True,
-					name = ROBAT_NAME, message = '',
-					settings = {}, groups = {}, contacts = {},
-				)
-				user.password = hash.hasher.encode(ROBAT_PASSWORD)
-				user.password_md5 = hash.hasher_md5.encode(ROBAT_PASSWORD)
-				sess.add(user)
-	except Exception:
-		pass
-
 def _robat_mail_notify(sess, user):
 	try:
 		unread = _get_unread_mail_count(user.email)

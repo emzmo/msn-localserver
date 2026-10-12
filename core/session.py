@@ -85,3 +85,31 @@ class DirectSession(Session):
 	
 	def close(self):
 		self.closed = True
+
+class RobatSession(Session):
+	def __init__(self, state, robat_service):
+		super().__init__(state)
+		self.robat_service = robat_service
+		self._chat = None
+	
+	def send_event(self, outgoing_event):
+		if isinstance(outgoing_event, event.ChatMessage):
+			sender = outgoing_event.user_sender
+			data = outgoing_event.data
+			if isinstance(data, bytes):
+				data = data.decode('utf-8', errors = 'replace')
+			sep = '\r\n\r\n'
+			idx = data.find(sep)
+			if idx >= 0:
+				data = data[idx + len(sep):]
+			body = data.strip()
+			if body and self._chat:
+				self.robat_service.on_chat_message(sender.email, body, self._chat)
+		elif isinstance(outgoing_event, event.InvitedToChatEvent):
+			pass
+	
+	def get_peername(self):
+		return ('server', 0)
+	
+	def close(self):
+		self.closed = True
