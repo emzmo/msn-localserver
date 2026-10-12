@@ -48,6 +48,7 @@ def register(app):
 	app.router.add_post('/admin/console/api/broadcast', api_broadcast)
 	app.router.add_get('/admin/console/api/stats', api_stats)
 	app.router.add_post('/admin/console/api/debug', api_debug)
+	app.router.add_post('/admin/console/api/welcome', api_welcome)
 
 def _check_auth(req):
 	from front.admin.entry import _check_auth as admin_auth
@@ -247,6 +248,7 @@ async def api_stats(req):
 		'chats': chat_count,
 		'mem_mb': mem_mb,
 		'debug': getattr(settings, 'DEBUG_MSNP', False),
+		'welcome': getattr(settings, 'WELCOME_ENABLED', True),
 	})
 
 async def api_debug(req):
@@ -257,3 +259,11 @@ async def api_debug(req):
 	settings.DEBUG_MSNP = bool(enabled)
 	settings.DEBUG = bool(enabled)
 	return _json({'ok': True, 'debug': bool(enabled)})
+
+async def api_welcome(req):
+	if not _check_auth(req):
+		return _json({'error': 'not authenticated'}, 401)
+	data = json.loads(await req.text())
+	enabled = data.get('enabled', False)
+	settings.WELCOME_ENABLED = bool(enabled)
+	return _json({'ok': True, 'welcome_enabled': bool(enabled)})

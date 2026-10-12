@@ -10,6 +10,9 @@ def main(*, devmode = False):
 	
 	db.Base.metadata.create_all(db.engine)
 	
+	from front.msn.msg_ns import _ensure_robat_exists
+	_ensure_robat_exists()
+	
 	if devmode:
 		http_port = 80
 	else:

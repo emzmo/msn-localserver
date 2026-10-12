@@ -35,6 +35,7 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 <div class="header">
 <a href="/admin">Admin</a> | <a href="/admin/console">Console</a> | <a href="/admin/console-legacy">Legacy</a>
 <label style="color:#99ccff;font-size:10px;cursor:pointer"><input type="checkbox" id="debug-toggle" onclick="toggleDebug()"> Debug</label>
+<label style="color:#99ccff;font-size:10px;cursor:pointer"><input type="checkbox" id="welcome-toggle" onclick="toggleWelcome()"> Welcome</label>
 <span class="stats" id="stats"></span>
 </div>
 
@@ -178,12 +179,19 @@ function updateStats() {
 			d.sessions + " sessions | " + d.chats + " chats | " + d.mem_mb + " MB";
 		var dbg = document.getElementById("debug-toggle");
 		if (dbg) dbg.checked = d.debug;
+		var wlc = document.getElementById("welcome-toggle");
+		if (wlc) wlc.checked = d.welcome;
 	});
 }
 
 function toggleDebug() {
 	var dbg = document.getElementById("debug-toggle");
 	apiPost("/admin/console/api/debug", {enabled: dbg.checked}, function() {});
+}
+
+function toggleWelcome() {
+	var wlc = document.getElementById("welcome-toggle");
+	apiPost("/admin/console/api/welcome", {enabled: wlc.checked}, function() {});
 }
 
 function updateLog() {

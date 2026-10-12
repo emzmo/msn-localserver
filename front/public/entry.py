@@ -224,6 +224,7 @@ async def handle_signup_submit(req):
 	email = form.get('email', '').strip()
 	password = form.get('password', '')
 	name = form.get('name', '').strip()
+	gaeilge = form.get('gaeilge') == 'on'
 
 	if '@' not in email or '.' not in email.split('@')[-1]:
 		return web.Response(status = 302, headers = {'Location': '/signup?error=invalid'})
@@ -243,7 +244,7 @@ async def handle_signup_submit(req):
 		user = User(
 			uuid = gen_uuid(), email = email, verified = True,
 			name = name, message = '',
-			settings = {}, groups = {}, contacts = {},
+			settings = {'gaeilge': gaeilge}, groups = {}, contacts = {},
 		)
 		user.password = hash.hasher.encode(password)
 		user.password_md5 = hash.hasher_md5.encode(password)

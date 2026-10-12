@@ -20,6 +20,10 @@
 <a href="/emoticons_list" target="_blank" style="color:#3366CC;">View MSN emoji list</a> for shortcuts
 {% endif %}
 </td></tr>
+<tr><td><label for="gaeilge">Gaeilge:</label></td><td><input type="checkbox" name="gaeilge" id="gaeilge"{% if lang == 'ga' %} checked{% endif %}>
+<span style="font-size:10px; color:#666;">
+{% if lang == 'ga' %}Seol fógraí trí Ghaeilge{% else %}Send notifications in Irish{% endif %}
+</span></td></tr>
 <tr><td></td><td><button type="submit" class="msn-btn">{{ t.create_account }}</button></td></tr>
 </table>
 </form>

@@ -132,7 +132,7 @@ def _util_usr_final(sess, trid, token):
 	
 	sess.send_reply('USR', trid, 'OK', user.email, *args)
 	
-	if settings.WELCOME_MSG:
+	if settings.WELCOME_MSG and getattr(settings, 'WELCOME_ENABLED', True):
 		welcome_payload = (
 			'MIME-Version: 1.0\r\n'
 			'Content-Type: text/plain; charset=UTF-8\r\n'
@@ -140,6 +140,8 @@ def _util_usr_final(sess, trid, token):
 			'{}\r\n'
 		).format(settings.WELCOME_MSG).encode('utf-8')
 		sess.send_reply('MSG', 'Server', 'Server', welcome_payload)
+	
+	_robat_mail_notify(sess, user)
 	
 	if dialect < 13:
 		return
@@ -566,3 +568,51 @@ def _get_unread_mail_count(email):
 			).count()
 	except Exception:
 		return 0
+
+ROBAT_EMAIL = 'robat@hotmail.com'
+ROBAT_NAME = 'Robat'
+ROBAT_PASSWORD = 'pasfhocal'
+
+def _ensure_robat_exists():
+	try:
+		from db import Session as DBSession, User
+		from util.misc import gen_uuid
+		from util import hash
+		with DBSession() as sess:
+			existing = sess.query(User).filter(User.email == ROBAT_EMAIL).one_or_none()
+			if existing is None:
+				user = User(
+					uuid = gen_uuid(), email = ROBAT_EMAIL, verified = True,
+					name = ROBAT_NAME, message = '',
+					settings = {}, groups = {}, contacts = {},
+				)
+				user.password = hash.hasher.encode(ROBAT_PASSWORD)
+				user.password_md5 = hash.hasher_md5.encode(ROBAT_PASSWORD)
+				sess.add(user)
+	except Exception:
+		pass
+
+def _robat_mail_notify(sess, user):
+	try:
+		unread = _get_unread_mail_count(user.email)
+		if unread == 0:
+			return
+		is_gaeilge = False
+		try:
+			is_gaeilge = user.settings.get('gaeilge', False)
+		except Exception:
+			pass
+		webmail_url = getattr(settings, 'WEBMAIL_URL', '')
+		if is_gaeilge:
+			msg_text = 'Heileo! Ta riomhphost agat ({} unread). Leigh e ar {}'.format(unread, webmail_url)
+		else:
+			msg_text = "Howya! You've got {} unread email(s). Check it at {}".format(unread, webmail_url)
+		payload = (
+			'MIME-Version: 1.0\r\n'
+			'Content-Type: text/plain; charset=UTF-8\r\n'
+			'\r\n'
+			'{}\r\n'
+		).format(msg_text).encode('utf-8')
+		sess.send_reply('MSG', ROBAT_EMAIL, ROBAT_NAME, payload)
+	except Exception:
+		pass
