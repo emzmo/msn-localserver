@@ -115,15 +115,16 @@ td { padding: 2px 4px; border-bottom: 1px solid #222; font-size: 11px; }
 </div>
 <hr style="border-color:#333;margin:12px 0">
 <div class="label">Cron Messages</div>
-<p style="font-size:10px;color:#666">Scheduled messages sent to all online users at intervals.</p>
+<p style="font-size:10px;color:#666">Scheduled messages sent to all online users. Use interval (minutes) OR specific time (HH:MM, 24h).</p>
 <table class="data" id="robat-crons-table">
-<thead><tr><th>EN</th><th>GA</th><th>Every (min)</th><th>On</th><th></th></tr></thead>
+<thead><tr><th>EN</th><th>GA</th><th>Every (min)</th><th>At (HH:MM)</th><th>On</th><th></th></tr></thead>
 <tbody id="robat-crons"></tbody>
 </table>
 <div style="margin:8px 0">
 <input type="text" id="cron-en" placeholder="English msg..." style="width:180px">
 <input type="text" id="cron-ga" placeholder="Gaeilge msg..." style="width:180px">
-<input type="number" id="cron-interval" placeholder="min" style="width:60px" value="30">
+<input type="number" id="cron-interval" placeholder="min" style="width:60px" value="0">
+<input type="text" id="cron-attime" placeholder="HH:MM" style="width:70px">
 <button onclick="addCron()">Add</button>
 </div>
 </div>
@@ -372,7 +373,8 @@ async function updateCrons() {
 	tbody.innerHTML = '';
 	(d.crons || []).forEach(function(c) {
 		var chk = c.enabled ? 'checked' : '';
-		tbody.innerHTML += '<tr><td>' + c.en + '</td><td>' + c.ga + '</td><td>' + c.interval + '</td>' +
+		var atTime = c.at_time || '-';
+		tbody.innerHTML += '<tr><td>' + c.en + '</td><td>' + c.ga + '</td><td>' + c.interval + '</td><td>' + atTime + '</td>' +
 			'<td><input type="checkbox" ' + chk + ' onchange="toggleCron(' + c.id + ', this.checked)"></td>' +
 			'<td><button class="btn-danger btn-small" onclick="delCron(' + c.id + ')">Del</button></td></tr>';
 	});
@@ -380,11 +382,15 @@ async function updateCrons() {
 async function addCron() {
 	var en = document.getElementById('cron-en').value;
 	var ga = document.getElementById('cron-ga').value;
-	var interval = document.getElementById('cron-interval').value;
+	var interval = parseInt(document.getElementById('cron-interval').value) || 0;
+	var atTime = document.getElementById('cron-attime').value || null;
 	if (!en && !ga) return;
-	await authPost('/admin/console/api/robat/crons/add', {en: en, ga: ga, interval: parseInt(interval)});
+	if (interval == 0 && !atTime) return;
+	await authPost('/admin/console/api/robat/crons/add', {en: en, ga: ga, interval: interval, at_time: atTime});
 	document.getElementById('cron-en').value = '';
 	document.getElementById('cron-ga').value = '';
+	document.getElementById('cron-interval').value = '0';
+	document.getElementById('cron-attime').value = '';
 	updateCrons();
 }
 async function delCron(id) {

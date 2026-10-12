@@ -578,9 +578,10 @@ def _robat_mail_notify(sess, user):
 			pass
 		webmail_url = getattr(settings, 'WEBMAIL_URL', '')
 		if is_gaeilge:
-			msg_text = 'Heileo! Ta riomhphost agat ({} unread). Leigh e ar {}'.format(unread, webmail_url)
+			tmpl = getattr(settings, 'MAIL_NOTIFY_GA', "Heileo! Ta riomhphost agat ({unread} unread). Leigh e ar {url}")
 		else:
-			msg_text = "Howya! You've got {} unread email(s). Check it at {}".format(unread, webmail_url)
+			tmpl = getattr(settings, 'MAIL_NOTIFY_EN', "Howya! You've got {unread} unread email(s). Check it at {url}")
+		msg_text = tmpl.format(unread = unread, url = webmail_url)
 		sess.state.backend.robat_send_chat(user.email, msg_text)
 	except Exception:
 		import traceback

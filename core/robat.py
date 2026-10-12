@@ -82,7 +82,22 @@ class RobatService:
 		self.login()
 
 	def _notify_contacts_online(self):
-		pass
+		from front.msn.misc import build_msnp_presence_notif
+		for sess in self.backend._sc.iter_sessions():
+			if sess.user is None or sess == self.session:
+				continue
+			if sess.user.detail is None:
+				continue
+			ctc = sess.user.detail.contacts.get(self.user.uuid)
+			if ctc is None:
+				continue
+			ctc.status.substatus = Substatus.NLN
+			ctc.status.name = self.user.status.name
+			try:
+				for m in build_msnp_presence_notif(None, ctc, getattr(sess.state, 'dialect', 8) or 8, self.backend):
+					sess.send_reply(*m)
+			except Exception:
+				pass
 
 	def send_chat(self, user_email, message_text):
 		return self.backend.robat_send_chat(user_email, message_text)
@@ -125,18 +140,21 @@ class RobatService:
 		reply = replies[step]
 		self.reply_step[sender_email] = step + 1
 		text = reply.reply_ga if is_gaeilge else reply.reply_en
-		from core.session import RobatSession
-		robat_sess = RobatSession(self.session.state, self)
-		robat_sess.user = self.user
-		robat_sess.client = self.session.client
-		chat.add_session(robat_sess)
 		msg_payload = (
 			'MIME-Version: 1.0\r\n'
 			'Content-Type: text/plain; charset=UTF-8\r\n'
 			'\r\n'
 			'{}\r\n'
 		).format(text).encode('utf-8')
-		chat.send_message_to_everyone(robat_sess, msg_payload)
+		from core import event as evt
+		for sess in list(chat._users_by_sess.keys()):
+			if sess.user is None or sess.user.email == ROBAT_EMAIL:
+				continue
+			if sess.user.email == sender_email:
+				try:
+					sess.send_event(evt.ChatMessage(self.user, msg_payload))
+				except Exception:
+					pass
 
 	async def _cron_loop(self):
 		while self.online:
@@ -149,7 +167,7 @@ class RobatService:
 	def _check_cron(self):
 		if not self.online:
 			return
-		now = datetime.utcnow()
+		now = datetime.now()
 		with DBSession() as sess:
 			crons = sess.query(RobatCron).filter(RobatCron.enabled == True).all()
 		for c in crons:
@@ -159,6 +177,19 @@ class RobatService:
 				if time.time() - last >= c.interval_min * 60:
 					self.reply_step[key] = time.time()
 					self._broadcast_cron(c)
+			elif c.at_time:
+				key = 'cron_time_%d' % c.id
+				try:
+					hh, mm = c.at_time.split(':')
+					target_hh, target_mm = int(hh), int(mm)
+				except Exception:
+					continue
+				last_key = self.reply_step.get(key, '')
+				today_key = now.strftime('%Y-%m-%d_%H:%M')
+				if now.hour == target_hh and now.minute == target_mm:
+					if last_key != today_key:
+						self.reply_step[key] = today_key
+						self._broadcast_cron(c)
 
 	def _broadcast_cron(self, cron):
 		for s in self.backend._sc.iter_sessions():
