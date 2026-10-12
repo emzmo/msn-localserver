@@ -64,6 +64,7 @@ def _m_ans(sess, trid, arg, token, sessid):
 			extra = (sc.state.front_specific.get('msn_capabilities') or 0,)
 		sess.send_reply('IRO', trid, i + 1, l, su.email, su.status.name, *extra)
 	sess.send_reply('ANS', trid, 'OK')
+	chat.flush_pending(sess)
 
 # State = Live
 

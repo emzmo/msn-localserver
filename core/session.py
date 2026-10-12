@@ -75,3 +75,13 @@ class SessionState:
 	
 	def on_connection_lost(self, sess: Session) -> None:
 		raise NotImplementedError('SessionState.on_connection_lost')
+
+class DirectSession(Session):
+	def __init__(self):
+		super().__init__(None)
+	
+	def send_event(self, outgoing_event):
+		pass
+	
+	def close(self):
+		self.closed = True

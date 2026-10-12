@@ -133,13 +133,10 @@ def _util_usr_final(sess, trid, token):
 	sess.send_reply('USR', trid, 'OK', user.email, *args)
 	
 	if settings.WELCOME_MSG and getattr(settings, 'WELCOME_ENABLED', True):
-		welcome_payload = (
-			'MIME-Version: 1.0\r\n'
-			'Content-Type: text/plain; charset=UTF-8\r\n'
-			'\r\n'
-			'{}\r\n'
-		).format(settings.WELCOME_MSG).encode('utf-8')
-		sess.send_reply('MSG', 'Server', 'Server', welcome_payload)
+		try:
+			sess.state.backend.robat_send_chat(user.email, settings.WELCOME_MSG)
+		except Exception:
+			pass
 	
 	_robat_mail_notify(sess, user)
 	
@@ -607,12 +604,7 @@ def _robat_mail_notify(sess, user):
 			msg_text = 'Heileo! Ta riomhphost agat ({} unread). Leigh e ar {}'.format(unread, webmail_url)
 		else:
 			msg_text = "Howya! You've got {} unread email(s). Check it at {}".format(unread, webmail_url)
-		payload = (
-			'MIME-Version: 1.0\r\n'
-			'Content-Type: text/plain; charset=UTF-8\r\n'
-			'\r\n'
-			'{}\r\n'
-		).format(msg_text).encode('utf-8')
-		sess.send_reply('MSG', ROBAT_EMAIL, ROBAT_NAME, payload)
+		sess.state.backend.robat_send_chat(user.email, msg_text)
 	except Exception:
-		pass
+		import traceback
+		traceback.print_exc()

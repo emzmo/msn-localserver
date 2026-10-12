@@ -337,6 +337,15 @@ class Backend:
 	def util_get_sessions_by_user(self, user):
 		return self._sc.get_sessions_by_user(user)
 	
+	def util_get_sessions_by_email(self, email):
+		uuid = self._user_service.get_uuid(email)
+		if uuid is None:
+			return []
+		user = self._user_by_uuid.get(uuid) or self._user_service.get(uuid)
+		if user is None:
+			return []
+		return self._sc.get_sessions_by_user(user)
+	
 	def notify_call(self, caller_uuid, callee_email, chatid):
 		caller = self._user_by_uuid.get(caller_uuid)
 		if caller is None: raise error.ServerError()
@@ -363,6 +372,47 @@ class Backend:
 			extra_data['client'] = ctc_sess.client
 			token = self._auth_service.create_token('sb/cal', { 'uuid': ctc_user.uuid, 'extra_data': extra_data })
 			ctc_sess.send_event(event.InvitedToChatEvent(chatid, token, caller))
+	
+	def robat_send_chat(self, user_email, message_text):
+		robat_uuid = self._user_service.get_uuid('robat@hotmail.com')
+		if robat_uuid is None:
+			return False
+		robat_user = self._user_by_uuid.get(robat_uuid)
+		if robat_user is None:
+			robat_user = self._user_service.get(robat_uuid)
+			if robat_user is None:
+				return False
+			self._user_by_uuid[robat_uuid] = robat_user
+		callee_uuid = self._user_service.get_uuid(user_email)
+		if callee_uuid is None:
+			return False
+		callee_sessions = self.util_get_sessions_by_email(user_email)
+		if not callee_sessions:
+			return False
+		chat = Chat(self._stats)
+		self._chats[chat.id] = chat
+		from core.session import DirectSession
+		from core.client import Client as ClientType
+		robat_sess = DirectSession()
+		robat_sess.user = robat_user
+		robat_sess.client = ClientType('msn', 'robat', 'server')
+		chat.add_session(robat_sess)
+		msg_payload = (
+			'MIME-Version: 1.0\r\n'
+			'Content-Type: text/plain; charset=UTF-8\r\n'
+			'\r\n'
+			'{}\r\n'
+		).format(message_text).encode('utf-8')
+		caller = robat_user
+		for ctc_sess in callee_sessions:
+			extra_data = ctc_sess.state.get_sb_extra_data() or {}
+			extra_data['client'] = ctc_sess.client
+			extra_data['dialect'] = getattr(ctc_sess.state, 'dialect', 8) or 8
+			extra_data['msn_capabilities'] = 0
+			token = self._auth_service.create_token('sb/cal', { 'uuid': callee_uuid, 'extra_data': extra_data })
+			ctc_sess.send_event(event.InvitedToChatEvent(chat.id, token, caller))
+		chat.send_message_to_everyone(robat_sess, msg_payload)
+		return True
 	
 	async def _sync_db(self):
 		while True:
@@ -474,9 +524,21 @@ class Chat:
 		# Dict[Session, User]
 		self._users_by_sess = {}
 		self._stats = stats
+		self._pending_messages = []
 	
 	def add_session(self, sess):
 		self._users_by_sess[sess] = sess.user
+	
+	def flush_pending(self, sess):
+		while self._pending_messages:
+			sender, data = self._pending_messages.pop(0)
+			su_sender = self._users_by_sess.get(sender)
+			if su_sender is None:
+				continue
+			for s in self._users_by_sess.keys():
+				if s == sender:
+					continue
+				s.send_event(event.ChatMessage(su_sender, data))
 	
 	def send_message_to_everyone(self, sess_sender, data):
 		self._stats.on_message_sent(sess_sender.user, sess_sender.client)
@@ -490,8 +552,7 @@ class Chat:
 			self._stats.on_message_received(sess.user, sess.client)
 			has_recipients = True
 		if not has_recipients:
-			sess_sender.send_event(event.CloseEvent())
-			sess_sender.close()
+			self._pending_messages.append((sess_sender, data))
 	
 	def get_roster(self, sess):
 		roster = []
